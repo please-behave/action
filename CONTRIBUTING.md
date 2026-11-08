@@ -36,7 +36,7 @@ install-only behavior using offline archives and the Action execution command.
 Other Python tests cover repository contracts and release readiness guards.
 Node tests cover release policy and publication in isolated Git repositories.
 These checks run at `pre-push` and `check`; CI runs them on x64 and ARM64.
-They do not provide an end-to-end test of `uses: ./` on a GitHub Actions runner.
+They do not provide an end-to-end test of the Action on a GitHub Actions runner.
 Tests must not invoke providers, live reviews or paid APIs.
 
 Local hooks are bypassable. General checks evaluate working files, which may

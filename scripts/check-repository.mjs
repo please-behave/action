@@ -39,6 +39,7 @@ export function checkRepository(root) {
   assert.equal(release.jobs.publish["runs-on"], "ubuntu-24.04");
   for (const step of release.jobs.publish.steps) {
     assert.notEqual(step.uses, "./", "Publish must not install the governor");
+    assert.doesNotMatch(step.uses ?? "", /^please-behave\/action@/, "Publish must not install the governor");
     assert.doesNotMatch(step.run ?? "", /\bplease\b/, "Publish must not run Please Behave");
   }
   assert.equal(release.jobs.checks.uses, "./.github/workflows/ci.yml");
@@ -55,10 +56,11 @@ export function checkRepository(root) {
           checkedOut = true;
           assert.equal(step.with["persist-credentials"], false);
         }
-        if (step.uses === "./") {
-          assert.ok(checkedOut, "Checkout must precede the local Action");
+        if (step.uses === "./" || step.uses?.startsWith("please-behave/action@")) {
+          assert.ok(checkedOut, "Checkout must precede the governor Action");
           assert.equal(step.with.version, version, "CLI pin must match .please-version");
-        } else if (step.uses && !step.uses.startsWith("./")) {
+        }
+        if (step.uses && !step.uses.startsWith("./")) {
           assert.match(step.uses, /@[a-f0-9]{40}$/, "External Actions require full SHA pins");
         }
       }

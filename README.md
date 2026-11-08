@@ -129,11 +129,12 @@ There is no persistent cache, installed-version detection, version comparison,
 Windows/macOS support or support guarantee for self-hosted runners. The installer
 checks runner OS/architecture metadata; it does not detect the Ubuntu version.
 Offline tests cover the installer and execution command with fixture archives.
-They do not provide an end-to-end test of `uses: ./` on a GitHub Actions runner.
+They do not provide an end-to-end test of the Action on a GitHub Actions runner.
 
 The repository uses the released CLI pinned in `.please-version` to govern its
-own development through `.please/`. CI bootstraps with `uses: ./`, synchronizes
-external rulesets and runs offline quality gates through Please Behave on both
+own development through `.please/`. CI bootstraps with the published Action pinned
+to the full commit SHA for `v1.0.0`, synchronizes external rulesets and runs offline
+quality gates through Please Behave on both
 supported architectures. The separate publish job verifies release readiness
 directly without installing Please Behave or Git hooks.
 Commit messages are checked only by the managed local Git hook;

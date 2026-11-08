@@ -38,19 +38,20 @@ Acceptance criteria:
   `check`; install-only mode installs without invoking the CLI or requiring
   `.please/` configuration.
 - Tests exercise the installer script and execution command offline. They do not
-  provide an end-to-end test of `uses: ./` on a GitHub Actions runner. CLI rule
+  provide an end-to-end test of the Action on a GitHub Actions runner. CLI rule
   selection, configuration validation and exit-code normalization belong to the CLI.
 
 Install development dependencies with `npm ci --ignore-scripts` (Node 26), the
 released governor pinned in `.please-version`, and the tools listed in
 [Contributing](../CONTRIBUTING.md). Install managed hooks and synchronize external
 rules with `sh scripts/setup-git-hooks.sh --yes`. CI installs the governor through
-the local Action after checkout, synchronizes imports and runs `check` through
-Please Behave. The Release workflow has two jobs: `checks` calls this reusable CI
+the published Action pinned to the full commit SHA for `v1.0.0` after checkout,
+synchronizes imports and runs `check` through Please Behave. The Release workflow
+has two jobs: `checks` calls this reusable CI
 workflow, and `publish` depends on it through `needs: checks`. The publish job uses
 a fresh runner, prepares Node dependencies and runs the release-readiness script
 before invoking Semantic Release. It does not install or configure Please Behave
-or Git hooks. No published Action ref is needed before the first release.
+or Git hooks.
 
 The imported local `commit-msg` hook validates messages. CI does not validate
 commit ranges or PR titles. Semantic Release still analyzes commits for version
