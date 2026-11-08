@@ -1,0 +1,8 @@
+id = "repository-contract"
+description = "Verify Action metadata, documentation and repository contracts"
+run_at = ["pre-commit", "pre-push", "check"]
+blocking = true
+
+[check]
+command = "node scripts/check-repository.mjs"
+timeout_seconds = 60

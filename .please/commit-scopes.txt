@@ -1,0 +1,7 @@
+action
+ci
+deps
+docs
+git
+release
+tests

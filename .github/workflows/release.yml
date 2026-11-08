@@ -1,0 +1,36 @@
+name: Release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+jobs:
+  checks:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+  publish:
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '26'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - name: Verify release readiness
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/check-release-ready.py
+      - name: Publish semantic Action release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npm run release

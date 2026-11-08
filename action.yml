@@ -1,0 +1,30 @@
+name: Please Behave
+description: Install an exact Please Behave release and optionally run an execution point
+inputs:
+  version:
+    description: Exact stable Please Behave release tag, such as v1.2.3
+    required: true
+  execution-point:
+    description: Execution point to run in the consuming repository
+    required: false
+    default: check
+  run:
+    description: Execute Please Behave after installation (true or false)
+    required: false
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - name: Install Please Behave
+      shell: bash
+      env:
+        PLEASE_VERSION: ${{ inputs.version }}
+        PLEASE_RUN: ${{ inputs.run }}
+        ACTION_DIRECTORY: ${{ github.action_path }}
+      run: bash "$ACTION_DIRECTORY/scripts/install.sh"
+    - name: Run Please Behave
+      if: inputs.run == 'true'
+      shell: bash
+      env:
+        PLEASE_EXECUTION_POINT_INPUT: ${{ inputs.execution-point }}
+      run: please run --at "$PLEASE_EXECUTION_POINT_INPUT"
