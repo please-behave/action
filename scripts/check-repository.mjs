@@ -65,7 +65,7 @@ export function checkRepository(root) {
     assert.equal(workflow.jobs[id]["runs-on"], "${{ matrix.os }}");
   }
   assert.deepEqual(ci.jobs.check.steps.filter(step => step.run).map(step => step.name),
-    ["Prepare validation dependencies", "Synchronize governance", "Run quality gates"],
+    ["Prepare validation dependencies", "Synchronize governance"],
     "Regular checks must run through Please Behave");
   assert.ok(ci.jobs.check.steps.every(step => step.uses !== "./"), "Real Action tests belong in Action E2E");
   assert.deepEqual(e2e.jobs.test.steps.filter(step => step.run).map(step => step.name),
@@ -111,7 +111,15 @@ export function checkRepository(root) {
       }
     }
   }
-  assert.ok(ci.jobs.check.steps.some(step => step.run === "please run --at check"));
+  const quality = ci.jobs.check.steps.find(step => step.name === "Run quality gates");
+  const installation = ci.jobs.check.steps.find(step => step.name === "Install released governor");
+  assert.match(quality.uses, /^please-behave\/action@[a-f0-9]{40}$/);
+  assert.equal(quality.uses, installation.uses, "Installation and execution use the same published Action");
+  assert.deepEqual(quality.with, { version, "execution-point": "check", summary: "true" });
+  assert.equal(installation.with.run, "false");
+  const synchronization = ci.jobs.check.steps.findIndex(step => step.run === "please sync --yes");
+  assert.ok(ci.jobs.check.steps.indexOf(installation) < synchronization);
+  assert.ok(synchronization < ci.jobs.check.steps.indexOf(quality));
   assert.ok(release.jobs.publish.steps.some(step => step.run === "python3 scripts/check-release-ready.py"));
   for (const file of ["README.md", "CONTRIBUTING.md", "docs/releasing.md"]) {
     for (const match of text(file).matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {

@@ -58,8 +58,10 @@ Install development dependencies with `npm ci --ignore-scripts` (Node 26), the
 released governor pinned in `.please-version`, and the tools listed in
 [Contributing](../CONTRIBUTING.md). Install managed hooks and synchronize external
 rules with `sh scripts/setup-git-hooks.sh --yes`. CI installs the governor through
-the published Action pinned to the full commit SHA for `v1.0.0` after checkout,
-synchronizes imports and runs `check` through Please Behave. The Release workflow
+the published Action pinned to the full commit SHA for `v1.1.0` after checkout,
+synchronizes imports and invokes the same published Action to run `check` with
+a Job Summary. Installation-only mode remains necessary before synchronization;
+the execution invocation installs the same CLI version again. The Release workflow
 calls reusable CI through `checks` and reusable Action E2E through `action-e2e`
 in parallel. The `publish` job depends on both through
 `needs: [checks, action-e2e]`, preserving both validation gates. The publish job uses

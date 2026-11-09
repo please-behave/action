@@ -7,10 +7,9 @@ per-invocation GitHub Job Summaries.
 
 ## Usage
 
-The first Action release is `v1.0.0` and requires CLI `v0.1.0` or a compatible
-later stable CLI release. The example below targets those versions; use it only
-after both repositories list their releases. The Action ref and CLI version are
-independent.
+The examples use Action `v1.1.0`, which includes Job Summaries, with CLI `v0.1.0`.
+Use CLI `v0.1.0` or a compatible later stable release. The Action ref and CLI
+version are independent.
 
 ```yaml
 permissions:
@@ -23,7 +22,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: please-behave/action@v1.0.0
+      - uses: please-behave/action@v1.1.0
         with:
           version: v0.1.0
           execution-point: check
@@ -80,7 +79,7 @@ steps:
     with:
       path: source
       persist-credentials: false
-  - uses: please-behave/action@v1.0.0
+  - uses: please-behave/action@v1.1.0
     with:
       version: v0.1.0
       run: 'false'
@@ -132,7 +131,7 @@ GitHub displays at most 20 step summaries per job.
 
 ## Version selection and pinning
 
-`uses: please-behave/action@v1.0.0` selects the Action implementation;
+`uses: please-behave/action@v1.1.0` selects the Action implementation;
 `with.version: v0.1.0` selects the downloaded CLI. Updating one does not update
 the other. The Action has no default CLI version and accepts only exact stable
 CLI tags. Consult the CLI release notes before changing the selected version.
@@ -141,7 +140,7 @@ For stronger reproducibility, pin the Action to the full 40-character commit SHA
 resolved from a published tag:
 
 ```sh
-gh api repos/please-behave/action/git/ref/tags/v1.0.0 --jq .object.sha
+gh api repos/please-behave/action/git/ref/tags/v1.1.0 --jq .object.sha
 ```
 
 Use that SHA in `uses: please-behave/action@<full-commit-sha>` and record the
@@ -183,8 +182,8 @@ summaries and ordinary governance failure propagation.
 
 The repository uses the released CLI pinned in `.please-version` to govern its
 own development through `.please/`. CI bootstraps with the published Action pinned
-to the full commit SHA for `v1.0.0`, synchronizes external rulesets and runs offline
-quality gates through Please Behave on both
+to the full commit SHA for `v1.1.0`, synchronizes external rulesets and invokes
+that published Action to run `check` with a Job Summary on both
 supported architectures in its `Check` matrix job. Action E2E runs independently
 on pushes to main and pull requests in its `Test` matrix job. Both workflows are
 also reusable by the Release workflow. Regular repository checks run exclusively
