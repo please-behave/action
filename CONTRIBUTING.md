@@ -30,6 +30,11 @@ Commit-message validation runs only in the managed local `commit-msg` hook;
 CI checks neither history nor PR titles. This repository uses direct maintainer
 pushes to `main`, with dependency PRs from Renovate.
 
+Renovate applies a minimum release age of seven days, or fourteen days for major
+updates. This is best effort: updates without a release timestamp may proceed.
+GitHub tag timestamps may not reflect republished content, and this policy does
+not guarantee the age of every transitive lockfile dependency.
+
 The `python-tests` check covers installation, checksum verification, input
 validation, execution-point argument handling, exit-code propagation and
 install-only behavior using offline archives and the Action execution command.

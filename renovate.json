@@ -4,7 +4,15 @@
     "config:best-practices"
   ],
   "platformAutomerge": false,
+  "minimumReleaseAge": "7 days",
+  "minimumReleaseAgeBehaviour": "timestamp-optional",
   "packageRules": [
+    {
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "minimumReleaseAge": "14 days"
+    },
     {
       "matchUpdateTypes": [
         "minor",
