@@ -12,6 +12,10 @@ inputs:
     description: Execute Please Behave after installation (true or false)
     required: false
     default: 'true'
+  summary:
+    description: Append a per-invocation GitHub Job Summary (true or false)
+    required: false
+    default: 'true'
 runs:
   using: composite
   steps:
@@ -20,6 +24,7 @@ runs:
       env:
         PLEASE_VERSION: ${{ inputs.version }}
         PLEASE_RUN: ${{ inputs.run }}
+        PLEASE_SUMMARY: ${{ inputs.summary }}
         ACTION_DIRECTORY: ${{ github.action_path }}
       run: bash "$ACTION_DIRECTORY/scripts/install.sh"
     - name: Run Please Behave
@@ -27,4 +32,6 @@ runs:
       shell: bash
       env:
         PLEASE_EXECUTION_POINT_INPUT: ${{ inputs.execution-point }}
-      run: please run --at "$PLEASE_EXECUTION_POINT_INPUT"
+        PLEASE_SUMMARY: ${{ inputs.summary }}
+        ACTION_DIRECTORY: ${{ github.action_path }}
+      run: bash "$ACTION_DIRECTORY/scripts/run.sh"

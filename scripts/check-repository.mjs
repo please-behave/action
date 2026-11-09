@@ -10,7 +10,13 @@ export function checkRepository(root) {
   const metadata = yaml("action.yml");
   const readme = text("README.md");
   assert.equal(metadata.runs.using, "composite", "Action must remain composite");
-  assert.deepEqual(Object.keys(metadata.inputs).sort(), ["execution-point", "run", "version"]);
+  assert.deepEqual(Object.keys(metadata.inputs).sort(), ["execution-point", "run", "summary", "version"]);
+  assert.equal(metadata.inputs.summary.default, "true");
+  const execution = metadata.runs.steps.find(step => step.name === "Run Please Behave");
+  assert.equal(execution.if, "inputs.run == 'true'");
+  assert.equal(execution.env.PLEASE_SUMMARY, "${{ inputs.summary }}");
+  assert.equal(execution.run, 'bash "$ACTION_DIRECTORY/scripts/run.sh"');
+  assert.equal(metadata.runs.steps[0].env.PLEASE_SUMMARY, "${{ inputs.summary }}");
   assert.equal(metadata.outputs, undefined, "Documented Action has no outputs");
   for (const [name, input] of Object.entries(metadata.inputs)) {
     const row = readme.split("\n").find(line => line.startsWith(`| \`${name}\` |`));
@@ -48,6 +54,10 @@ export function checkRepository(root) {
   assert.deepEqual(release.permissions, { contents: "read" });
   assert.deepEqual(release.jobs.publish.permissions, { contents: "write" });
   assert.deepEqual(ci.jobs.tests.strategy.matrix.os, ["ubuntu-24.04", "ubuntu-24.04-arm"]);
+  assert.deepEqual(ci.jobs.summaries.strategy.matrix.os, ["ubuntu-24.04", "ubuntu-24.04-arm"]);
+  const invocations = ci.jobs.summaries.steps.filter(step => step.uses === "./");
+  assert.deepEqual(invocations.map(step => step.with["execution-point"]), ["summary-first", "summary-second"]);
+  assert.equal(invocations[1]["continue-on-error"], true);
   for (const workflow of [ci, release]) {
     for (const job of Object.values(workflow.jobs)) {
       let checkedOut = false;

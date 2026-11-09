@@ -23,7 +23,8 @@ class ActionTests(unittest.TestCase):
         self.path_file = self.root / "github-path"
         self.env = dict(os.environ, PATH=str(self.tools) + os.pathsep + os.environ["PATH"],
                         RUNNER_TEMP=str(self.root), RUNNER_OS="Linux", RUNNER_ARCH="X64",
-                        PLEASE_VERSION="v1.2.3", PLEASE_RUN="false", GITHUB_PATH=str(self.path_file),
+                        PLEASE_VERSION="v1.2.3", PLEASE_RUN="false", PLEASE_SUMMARY="true",
+                        ACTION_DIRECTORY=str(ROOT), GITHUB_STEP_SUMMARY=str(self.root / "summary"), GITHUB_PATH=str(self.path_file),
                         ASSETS=str(self.assets), DOWNLOADS=str(self.root / "downloads"),
                         INVOCATION=str(self.root / "invocation"))
         curl = self.tools / "curl"
@@ -116,6 +117,7 @@ class ActionTests(unittest.TestCase):
         for env in ({"PLEASE_VERSION": ""}, {"PLEASE_VERSION": "latest"},
                     {"PLEASE_VERSION": "v1.2.3;echo injected"},
                     {"PLEASE_VERSION": "v01.2.3"}, {"PLEASE_VERSION": "v1.2.3-rc.1"}, {"PLEASE_RUN": "yes"},
+                    {"PLEASE_SUMMARY": "yes"}, {"PLEASE_SUMMARY": "True"}, {"PLEASE_SUMMARY": ""},
                     {"RUNNER_OS": "macOS"}, {"RUNNER_ARCH": "other"}):
             with self.subTest(env=env):
                 result = self.install(**env)

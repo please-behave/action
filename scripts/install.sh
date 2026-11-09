@@ -10,6 +10,10 @@ if [[ "$PLEASE_RUN" != true && "$PLEASE_RUN" != false ]]; then
   echo "::error::run must be true or false." >&2
   exit 1
 fi
+if [[ "$PLEASE_SUMMARY" != true && "$PLEASE_SUMMARY" != false ]]; then
+  echo "::error::summary must be true or false." >&2
+  exit 1
+fi
 if [[ "$RUNNER_OS" != Linux ]]; then
   echo "::error::The Please Behave Action supports GitHub-hosted Ubuntu 24.04 runners only." >&2
   exit 1

@@ -2,7 +2,8 @@
 
 A lightweight composite GitHub Action that installs and invokes the
 [Please Behave CLI](https://github.com/please-behave/cli). The CLI evaluates
-repository rules; this Action only provides installation and optional execution.
+repository rules; this Action provides installation, optional execution and
+per-invocation GitHub Job Summaries.
 
 ## Usage
 
@@ -38,6 +39,7 @@ and credentials required by its rules before running the Action.
 | `version` | Yes | None | Exact stable CLI release tag: `vMAJOR.MINOR.PATCH`. No `latest`, ranges or prereleases. |
 | `execution-point` | No | `check` | Point passed as one argument to `please run --at`. |
 | `run` | No | `'true'` | `'true'` executes after installation; `'false'` installs only. Other values fail. |
+| `summary` | No | `'true'` | `'true'` appends a Job Summary for this execution; `'false'` bypasses summary processing. Only these exact values are accepted. |
 
 There are no Action outputs. The installed `please` executable is available on
 PATH to subsequent steps in the same job, including with `run: 'false'`.
@@ -47,7 +49,9 @@ PATH to subsequent steps in the same job, including with `run: 'false'`.
 Supported runners are GitHub-hosted Ubuntu 24.04 x64 (`ubuntu-24.04`) and ARM64
 (`ubuntu-24.04-arm`). The installer maps these to `x86_64-unknown-linux-gnu` and
 `aarch64-unknown-linux-gnu`, respectively. Other OS or architecture values fail.
-It relies on the hosted runner's Bash, curl, awk, sha256sum, tar and install tools.
+It relies on the hosted runner's Bash, curl, awk, sha256sum, tar and install tools,
+plus Python 3 when summaries are enabled. No additional packages or permissions
+are required for summaries.
 
 Each invocation downloads `please-<tag>-<target>.tar.gz` and `SHA256SUMS` from
 `please-behave/cli` GitHub release assets. It requires exactly one matching
@@ -83,6 +87,48 @@ steps:
   - run: please run --at check
     working-directory: source
 ```
+
+## Job Summaries
+
+Execution appends a separate Markdown summary to the current step's
+`GITHUB_STEP_SUMMARY`, including the execution point in the heading. Repeated
+Action invocations keep independent summaries, including within one job. Existing
+summary content is preserved; reports are never aggregated across points.
+Use `summary: 'false'` to bypass all summary processing. Install-only mode
+(`run: 'false'`) produces no summary and does not touch reports.
+
+The summary shows the CLI aggregate outcome, exact exit code, measured CLI wall
+clock duration and a table in `plan.scheduled` order. Each row shows its plan
+position, CLI status, blocking/advisory enforcement, name, technical ID,
+description and saved duration in milliseconds. Results match by technical ID
+and kind, so duplicate names and parallel completion cannot change row identity
+or order. PASS, FAIL, ERROR, NOT_RUN and CANCELLED remain CLI statuses. Advisory
+failures stay visible; the CLI aggregate outcome remains authoritative. Integrity
+diagnostics appear separately, and empty plans are labeled explicitly.
+
+The renderer supports report schema 4 and plan schema 3. It validates execution
+point, repository, rule identities, result correspondence and displayed metadata.
+Missing, malformed, incompatible or inconsistent reports produce a diagnostic
+instead of a rule table. A nonzero CLI exit is always displayed as unsuccessful,
+even if a saved report says PASS. Summary failures emit warnings without changing
+the CLI exit code or triggering another governance run.
+
+Before execution, an existing regular `.please/reports/last.json` is moved to a
+private temporary directory alongside the report. Only a report produced after
+this isolation is eligible for rendering; timestamps and plan IDs are not used
+as freshness evidence. If execution produces no report, the previous report is
+restored after summary processing. A new report replaces the old one, even when
+malformed. Unsafe paths or isolation failures disable report rendering for that
+invocation and emit a diagnostic. Concurrent CLI invocations sharing a checkout
+are unsupported. Hard cancellation, runner termination and workflow cancellation
+can prevent summary generation and report restoration; leftover `.summary-*`
+directories may contain the preserved report.
+
+Report input is bounded to 32 MiB. Summary output, including existing content,
+is bounded to 900 KiB, below GitHub's 1 MiB per-step limit. Displayed text fields
+are limited to 512 characters and escaped for Markdown and HTML; oversized output
+is visibly truncated. Consult the CLI logs and saved report for full details.
+GitHub displays at most 20 step summaries per job.
 
 ## Version selection and pinning
 
@@ -128,8 +174,10 @@ archive and provide integrity verification, not an independent signature.
 There is no persistent cache, installed-version detection, version comparison,
 Windows/macOS support or support guarantee for self-hosted runners. The installer
 checks runner OS/architecture metadata; it does not detect the Ubuntu version.
-Offline tests cover the installer and execution command with fixture archives.
-They do not provide an end-to-end test of the Action on a GitHub Actions runner.
+Offline tests cover installation, execution, report isolation and summary failure
+handling with fixtures. CI also exercises the local composite Action with two
+sequential invocations on both supported hosted runners, checking independent
+summaries and ordinary governance failure propagation.
 
 The repository uses the released CLI pinned in `.please-version` to govern its
 own development through `.please/`. CI bootstraps with the published Action pinned

@@ -27,6 +27,16 @@ warrant a release. Reverted commit pairs cancel when both are unreleased.
 
 Acceptance criteria:
 
+- Summary input defaults to true and accepts only true/false. Disabled summaries
+  bypass report processing; install-only mode is unchanged. The CLI exit code
+  survives missing, stale, malformed, unsupported reports and rendering errors.
+- Summary rows follow the scheduled plan and match technical identities. Status,
+  enforcement, descriptions and durations come from the saved report. Integrity
+  diagnostics are separate; empty plans and unsuccessful exits are explicit.
+- Offline tests cover report isolation/restoration, independent sequential runs,
+  escaping and bounded output. Hosted composite tests verify repeated invocation
+  summaries and failure behavior on both supported runner architectures.
+
 - The offline Semantic Release lifecycle starts from an empty isolated bare Git
   remote, publishes 1.0.0, then 1.0.1, 1.1.0 and 2.0.0 for fix, feature and breaking
   commits. Documentation alone and repeated publication create no tag or commit.
@@ -37,8 +47,9 @@ Acceptance criteria:
   propagates success and failure exit codes unchanged. The default point is
   `check`; install-only mode installs without invoking the CLI or requiring
   `.please/` configuration.
-- Tests exercise the installer script and execution command offline. They do not
-  provide an end-to-end test of the Action on a GitHub Actions runner. CLI rule
+- Tests exercise the installer script and execution command offline. Hosted
+  composite acceptance tests on both architectures cover repeated
+  invocations, independent summaries and ordinary governance failures. CLI rule
   selection, configuration validation and exit-code normalization belong to the CLI.
 
 Install development dependencies with `npm ci --ignore-scripts` (Node 26), the

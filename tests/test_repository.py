@@ -29,6 +29,8 @@ class RepositoryTests(unittest.TestCase):
 
     def test_contradictions_fail(self):
         cases = [("action.yml", "using: composite", "using: node24"),
+                 ("action.yml", "        PLEASE_SUMMARY: ${{ inputs.summary }}", "        PLEASE_SUMMARY: 'false'"),
+                 ("README.md", "| `summary` | No | `'true'` |", "| `summary` | No | `'false'` |"),
                  ("README.md", "| No | `check` |", "| No | `other` |"),
                  ("package-lock.json", '"node": ">=26 <27"', '"node": ">=24 <27"'),
                  (".github/workflows/release.yml", "  workflow_dispatch:", "  push:"),
