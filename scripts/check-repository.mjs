@@ -38,10 +38,11 @@ export function checkRepository(root) {
   const version = text(".please-version").trim();
   assert.match(version, /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
   const ci = yaml(".github/workflows/ci.yml");
+  const e2e = yaml(".github/workflows/action-e2e.yml");
   const release = yaml(".github/workflows/release.yml");
   assert.deepEqual(Object.keys(release.on), ["workflow_dispatch"], "Releases must remain manual");
-  assert.deepEqual(Object.keys(release.jobs).sort(), ["checks", "publish"]);
-  assert.equal(release.jobs.publish.needs, "checks");
+  assert.deepEqual(Object.keys(release.jobs).sort(), ["action-e2e", "checks", "publish"]);
+  assert.deepEqual(release.jobs.publish.needs, ["checks", "action-e2e"]);
   assert.equal(release.jobs.publish["runs-on"], "ubuntu-24.04");
   for (const step of release.jobs.publish.steps) {
     assert.notEqual(step.uses, "./", "Publish must not install the governor");
@@ -50,20 +51,49 @@ export function checkRepository(root) {
   }
   assert.equal(release.jobs.checks.uses, "./.github/workflows/ci.yml");
   assert.equal(release.jobs.checks.if, "github.ref == 'refs/heads/main'");
-  assert.deepEqual(ci.permissions, { contents: "read" });
+  assert.equal(release.jobs["action-e2e"].uses, "./.github/workflows/action-e2e.yml");
+  assert.equal(release.jobs["action-e2e"].if, "github.ref == 'refs/heads/main'");
+  for (const [workflow, name, id, display] of [[ci, "CI", "check", "Check"], [e2e, "Action E2E", "test", "Test"]]) {
+    assert.equal(workflow.name, name);
+    assert.deepEqual(Object.keys(workflow.jobs), [id]);
+    assert.equal(workflow.jobs[id].name, display);
+    assert.equal(workflow.jobs[id].needs, undefined, "CI and Action E2E run independently");
+    assert.deepEqual(workflow.on, { push: { branches: ["main"] }, pull_request: null, workflow_call: null });
+    assert.deepEqual(workflow.permissions, { contents: "read" });
+    assert.deepEqual(workflow.jobs[id].strategy.matrix.os, ["ubuntu-24.04", "ubuntu-24.04-arm"]);
+    assert.equal(workflow.jobs[id].strategy["fail-fast"], false);
+    assert.equal(workflow.jobs[id]["runs-on"], "${{ matrix.os }}");
+  }
+  assert.deepEqual(ci.jobs.check.steps.filter(step => step.run).map(step => step.name),
+    ["Prepare validation dependencies", "Synchronize governance", "Run quality gates"],
+    "Regular checks must run through Please Behave");
+  assert.ok(ci.jobs.check.steps.every(step => step.uses !== "./"), "Real Action tests belong in Action E2E");
+  assert.deepEqual(e2e.jobs.test.steps.filter(step => step.run).map(step => step.name),
+    ["Prepare isolated summary acceptance fixture", "Verify Action outcomes and independent summaries"]);
   assert.deepEqual(release.permissions, { contents: "read" });
   assert.deepEqual(release.jobs.publish.permissions, { contents: "write" });
-  assert.deepEqual(ci.jobs.tests.strategy.matrix.os, ["ubuntu-24.04", "ubuntu-24.04-arm"]);
-  assert.deepEqual(ci.jobs.summaries.strategy.matrix.os, ["ubuntu-24.04", "ubuntu-24.04-arm"]);
-  const invocations = ci.jobs.summaries.steps.filter(step => step.uses === "./");
+  const invocations = e2e.jobs.test.steps.filter(step => step.uses === "./");
   assert.deepEqual(invocations.map(step => step.with["execution-point"]), ["summary-first", "summary-second"]);
-  const fixture = ci.jobs.summaries.steps.find(step => step.name === "Prepare isolated summary acceptance fixture");
+  const fixture = e2e.jobs.test.steps.find(step => step.name === "Prepare isolated summary acceptance fixture");
   const customPoints = fixture.run.match(/\[execution_points\]\s+custom = (\[[^\n]+\])/);
   assert.ok(customPoints, "Summary fixture must declare its custom execution points");
   assert.deepEqual(JSON.parse(customPoints[1]), invocations.map(step => step.with["execution-point"]),
     "Summary fixture declarations must match the Action invocations");
+  assert.equal(invocations[0].id, "passing");
+  assert.equal(invocations[0]["continue-on-error"], undefined);
+  assert.equal(invocations[1].id, "failing");
   assert.equal(invocations[1]["continue-on-error"], true);
-  for (const workflow of [ci, release]) {
+  assert.equal(invocations[1].env.FIXTURE_RESULT, "1");
+  const verification = e2e.jobs.test.steps.at(-1);
+  assert.equal(verification.if, "always()");
+  assert.equal(verification.run, "python3 scripts/check-action-e2e.py");
+  assert.deepEqual(verification.env, {
+    PASSING_OUTCOME: "${{ steps.passing.outcome }}",
+    PASSING_CONCLUSION: "${{ steps.passing.conclusion }}",
+    FAILING_OUTCOME: "${{ steps.failing.outcome }}",
+    FAILING_CONCLUSION: "${{ steps.failing.conclusion }}",
+  });
+  for (const workflow of [ci, e2e, release]) {
     for (const job of Object.values(workflow.jobs)) {
       let checkedOut = false;
       for (const step of job.steps ?? []) {
@@ -81,7 +111,7 @@ export function checkRepository(root) {
       }
     }
   }
-  assert.ok(ci.jobs.tests.steps.some(step => step.run === "please run --at check"));
+  assert.ok(ci.jobs.check.steps.some(step => step.run === "please run --at check"));
   assert.ok(release.jobs.publish.steps.some(step => step.run === "python3 scripts/check-release-ready.py"));
   for (const file of ["README.md", "CONTRIBUTING.md", "docs/releasing.md"]) {
     for (const match of text(file).matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {

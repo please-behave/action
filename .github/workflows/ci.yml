@@ -7,7 +7,8 @@ on:
 permissions:
   contents: read
 jobs:
-  tests:
+  check:
+    name: Check
     strategy:
       fail-fast: false
       matrix:
@@ -50,75 +51,3 @@ jobs:
           path: .please/reports/*.json
           if-no-files-found: ignore
           include-hidden-files: true
-  summaries:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - name: Prepare isolated summary acceptance fixture
-        run: |
-          mv .please "$RUNNER_TEMP/original-please"
-          mkdir -p .please/checks/fixture "$RUNNER_TEMP/summary-tools"
-          cat > .please/config.toml <<'EOF'
-          project = "Summary acceptance"
-          [execution_points]
-          custom = ["summary-first", "summary-second"]
-          EOF
-          cat > .please/checks/fixture/rule.toml <<'EOF'
-          id = "fixture"
-          description = "Hosted composite summary acceptance"
-          run_at = ["summary-first", "summary-second"]
-          blocking = true
-          [check]
-          command = "bash -c 'exit ${FIXTURE_RESULT:-0}'"
-          EOF
-          # Preserve a copy of the actual composite step summary before runner upload.
-          cat > "$RUNNER_TEMP/summary-tools/python3" <<'EOF'
-          #!/usr/bin/env bash
-          /usr/bin/python3 "$@"
-          result=$?
-          if [[ "$1" == */scripts/summary.py ]]; then
-            cp "$GITHUB_STEP_SUMMARY" "$RUNNER_TEMP/$PLEASE_EXECUTION_POINT_INPUT.md"
-          fi
-          exit "$result"
-          EOF
-          chmod +x "$RUNNER_TEMP/summary-tools/python3"
-          echo "$RUNNER_TEMP/summary-tools" >> "$GITHUB_PATH"
-      - name: First invocation with default summary
-        uses: ./
-        with:
-          version: v0.1.0
-          execution-point: summary-first
-      - name: Second invocation with failed governance
-        id: failed
-        continue-on-error: true
-        uses: ./
-        env:
-          FIXTURE_RESULT: '1'
-        with:
-          version: v0.1.0
-          execution-point: summary-second
-      - name: Verify independent composite summaries and failure behavior
-        env:
-          FAILED_OUTCOME: ${{ steps.failed.outcome }}
-        run: |
-          python3 - <<'PY'
-          import html
-          import os
-          from pathlib import Path
-          root = Path(os.environ["RUNNER_TEMP"])
-          for point, outcome in (("summary-first", "PASS"), ("summary-second", "FAIL")):
-              text = (root / f"{point}.md").read_text()
-              assert text.count("## Please Behave") == 1, text
-              assert f"— {point}" in html.unescape(text), text
-              assert f"**{outcome}**" in text, text
-              assert "| 1/1 |" in text, text
-              assert "Hosted composite summary acceptance" in text, text
-          assert os.environ["FAILED_OUTCOME"] == "failure"
-          PY

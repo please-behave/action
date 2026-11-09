@@ -153,8 +153,9 @@ refs are maintained.
 ## Action releases
 
 The manually dispatched Release workflow requires Please Behave quality checks
-on both supported architectures and release readiness checks before Semantic
-Release can publish a Git tag and GitHub Release. Versions start at `1.0.0`
+and Action E2E tests on both supported architectures, plus release readiness
+checks before Semantic Release can publish a Git tag and GitHub Release.
+Versions start at `1.0.0`
 without seed tags. Features increment minor; fixes, performance improvements and
 effective reverts increment patch; breaking changes increment major. Documentation
 and development tooling changes alone do not release. Classify security fixes to
@@ -175,15 +176,20 @@ There is no persistent cache, installed-version detection, version comparison,
 Windows/macOS support or support guarantee for self-hosted runners. The installer
 checks runner OS/architecture metadata; it does not detect the Ubuntu version.
 Offline tests cover installation, execution, report isolation and summary failure
-handling with fixtures. CI also exercises the local composite Action with two
-sequential invocations on both supported hosted runners, checking independent
+handling with fixtures. The separate Action E2E workflow exercises the local
+composite Action with two sequential invocations on both supported hosted runners,
+checking independent
 summaries and ordinary governance failure propagation.
 
 The repository uses the released CLI pinned in `.please-version` to govern its
 own development through `.please/`. CI bootstraps with the published Action pinned
 to the full commit SHA for `v1.0.0`, synchronizes external rulesets and runs offline
 quality gates through Please Behave on both
-supported architectures. The separate publish job verifies release readiness
+supported architectures in its `Check` matrix job. Action E2E runs independently
+on pushes to main and pull requests in its `Test` matrix job. Both workflows are
+also reusable by the Release workflow. Regular repository checks run exclusively
+through Please Behave in CI; Action E2E performs only real-runner integration tests.
+The separate publish job verifies release readiness
 directly without installing Please Behave or Git hooks.
 Commit messages are checked only by the managed local Git hook;
 CI does not validate commit history or PR titles. See

@@ -36,8 +36,23 @@ install-only behavior using offline archives and the Action execution command.
 Other Python tests cover repository contracts and release readiness guards.
 Node tests cover release policy and publication in isolated Git repositories.
 These checks run at `pre-push` and `check`; CI runs them on x64 and ARM64.
-CI also runs a hosted composite acceptance test with repeated invocations,
-independent Job Summaries and an ordinary failed governance execution.
+The independent Action E2E workflow runs the actual composite Action through
+`uses: ./` on both architectures, with repeated invocations, independent Job
+Summaries and an expected failed governance execution. CI has one matrix job,
+`check` / `Check`; Action E2E has one matrix job, `test` / `Test`. Both workflows
+run on pushes to main, pull requests and reusable workflow calls. Neither waits
+for the other during normal development.
+
+The negative E2E step uses `continue-on-error: true`. The verifier requires its
+raw `outcome` to be `failure` and its effective `conclusion` to be `success`;
+the positive invocation must report success for both. It also verifies each
+summary's execution point, aggregate outcome, exact exit code, rule row and
+isolation. Unexpected success, unexpected failure, skipped invocations and
+missing summaries fail the test. Verification runs even after an earlier failure.
+GitHub can still emit a native nonzero-exit annotation for the expected failure;
+this is labeled explicitly in the step name. Suppressing it by masking the Action
+exit code would invalidate the outcome test. Offline tests of the verifier and
+workflow contracts remain part of Please Behave's regular quality checks.
 Tests must not invoke providers, live reviews or paid APIs.
 
 Local hooks are bypassable. General checks evaluate working files, which may

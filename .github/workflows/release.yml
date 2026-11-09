@@ -10,8 +10,11 @@ jobs:
   checks:
     if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/ci.yml
+  action-e2e:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/action-e2e.yml
   publish:
-    needs: checks
+    needs: [checks, action-e2e]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

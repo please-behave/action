@@ -2,8 +2,10 @@
 
 The Action has its own version, independent of the selected CLI version.
 Only the manually dispatched Release workflow on `main` publishes. It calls CI
-at the dispatched revision before its publication job receives `contents: write`.
-The `check` execution point must succeed on Ubuntu 24.04 x64 and ARM64.
+and Action E2E at the dispatched revision before its publication job receives
+`contents: write`.
+The CI `Check` job and Action E2E `Test` job must succeed on Ubuntu 24.04
+x64 and ARM64. CI runs the `check` execution point through Please Behave.
 The publisher refuses an outdated revision and requires the public CLI release
 pinned in `.please-version`, both Linux archives plus SHA256SUMS. These publication
 conditions run directly through `python3 scripts/check-release-ready.py`.
@@ -58,8 +60,9 @@ released governor pinned in `.please-version`, and the tools listed in
 rules with `sh scripts/setup-git-hooks.sh --yes`. CI installs the governor through
 the published Action pinned to the full commit SHA for `v1.0.0` after checkout,
 synchronizes imports and runs `check` through Please Behave. The Release workflow
-has two jobs: `checks` calls this reusable CI
-workflow, and `publish` depends on it through `needs: checks`. The publish job uses
+calls reusable CI through `checks` and reusable Action E2E through `action-e2e`
+in parallel. The `publish` job depends on both through
+`needs: [checks, action-e2e]`, preserving both validation gates. The publish job uses
 a fresh runner, prepares Node dependencies and runs the release-readiness script
 before invoking Semantic Release. It does not install or configure Please Behave
 or Git hooks.
@@ -78,22 +81,28 @@ tag is used. Semantic Release writes release tags and Git notes, not `main`.
 
 The active `main` branch ruleset prevents deletion. It currently permits history
 replacement and has no required status checks. The maintainer pushes directly to
-`main`, with dependency PRs from Renovate. Publishing always requires the `tests`
-job on both architectures through the reusable CI workflow, regardless of branch
-protection settings. Repository protection settings are managed separately;
+`main`, with dependency PRs from Renovate. Publishing always requires CI and
+Action E2E on both architectures through their reusable workflows, regardless
+of branch protection settings. Repository protection settings are managed separately;
 do not restrict release tags or `refs/notes/*`.
+
+If required status checks are configured, replace references to the old `tests`
+and `summaries` jobs with the new CI `Check` and Action E2E `Test` checks for both
+matrix variants. Use the actual check names emitted by GitHub, including reusable
+workflow prefixes where applicable. This refactor does not change remote branch
+protection settings.
 
 ## Publication procedure
 
-After reviewing CI results and confirming the CLI dependency, an authorized
-maintainer can dispatch:
+After reviewing CI and Action E2E results and confirming the CLI dependency,
+an authorized maintainer can dispatch:
 
 ```sh
 gh workflow run release.yml --ref main --repo please-behave/action
 ```
 
-The workflow reruns CI; it cannot skip validation via dispatch inputs. Publication
-is serialized and does not cancel an active release. GitHub's default concurrency
+The workflow reruns CI and Action E2E; it cannot skip validation via dispatch
+inputs. Publication is serialized and does not cancel an active release. GitHub's default concurrency
 queue can replace a pending dispatch. No branch write or protection bypass is
 required. A publication failure can leave a tag without a GitHub Release; inspect
 both remote states before retrying. Published immutable releases cannot be repaired
