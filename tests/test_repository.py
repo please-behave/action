@@ -18,6 +18,8 @@ class RepositoryTests(unittest.TestCase):
             shutil.copy2(ROOT / name, self.root / name)
         for name in (".github", "docs"):
             shutil.copytree(ROOT / name, self.root / name)
+        (self.root / ".please").mkdir()
+        shutil.copy2(ROOT / ".please/release-ci.json", self.root / ".please/release-ci.json")
 
     def check(self):
         return subprocess.run(["node", str(ROOT / "scripts/check-repository.mjs")],
@@ -34,9 +36,10 @@ class RepositoryTests(unittest.TestCase):
                  ("README.md", "| No | `check` |", "| No | `other` |"),
                  ("package-lock.json", '"node": ">=26 <27"', '"node": ">=24 <27"'),
                  (".github/workflows/release.yml", "  workflow_dispatch:", "  push:"),
-                 (".github/workflows/release.yml", "    needs: [checks, action-e2e]", "    needs: []"),
-                 (".github/workflows/release.yml", "run: python3 scripts/check-release-ready.py",
-                  "run: please run --at release"),
+                 (".github/workflows/release.yml", "    needs: [plan, release-readiness, release-candidate]", "    needs: []"),
+                 (".github/workflows/release.yml", "needs.release-candidate.result == 'success'",
+                  "needs.release-candidate.result == 'skipped'"),
+                 (".please/release-ci.json", '"Check (ubuntu-24.04-arm)"', '"Check"'),
                  (".github/workflows/release.yml", "      - run: npm ci --ignore-scripts",
                   "      - uses: ./\n      - run: npm ci --ignore-scripts"),
                  (".github/workflows/ci.yml", "os: [ubuntu-24.04, ubuntu-24.04-arm]", "os: [ubuntu-24.04]"),

@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   check:
-    name: Check
+    name: Check (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:

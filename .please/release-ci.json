@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "repository": "please-behave/action",
+  "workflow": ".github/workflows/ci.yml",
+  "event": "push",
+  "branch": "main",
+  "required_jobs": [
+    "Check (ubuntu-24.04)",
+    "Check (ubuntu-24.04-arm)"
+  ]
+}

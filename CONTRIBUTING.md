@@ -16,6 +16,7 @@ Please Behave owns the repository's quality gates:
 | `commit-msg` | Imported Conventional Commits validator |
 | `pre-push` | Offline Python and Node tests, workflow/shell/contract checks, imported security and license checks |
 | `check` | The same quality gates as `pre-push`, on the CI checkout |
+| `release-readiness` | Exact-commit CI proof, committed-source security/license, current npm audit and public CLI assets |
 
 Commit and push to run validation through the installed hooks. `npm test`
 delegates to `please run --at pre-push`; it does not define a second test suite.
@@ -44,7 +45,7 @@ These checks run at `pre-push` and `check`; CI runs them on x64 and ARM64.
 The independent Action E2E workflow runs the actual composite Action through
 `uses: ./` on both architectures, with repeated invocations, independent Job
 Summaries and an expected failed governance execution. CI has one matrix job,
-`check` / `Check`; Action E2E has one matrix job, `test` / `Test`. Both workflows
+`check` / `Check (RUNNER)`; Action E2E has one matrix job, `test` / `Test`. Both workflows
 run on pushes to main, pull requests and reusable workflow calls. Neither waits
 for the other during normal development.
 
@@ -65,8 +66,14 @@ include unstaged edits; imported security and license checks read `HEAD` at
 pre-push. Clean CI checkouts provide the release gate. Security scans cover a
 snapshot, not all historical commits or every pushed ref.
 
-The publish job runs the release-readiness script directly to verify the tested
-main revision and public CLI assets without installing Please Behave or hooks.
+Release plans the next version, then runs Readiness and the E2E Candidate in
+parallel. Readiness uses the pinned external `release/readiness` ruleset to verify
+both explicitly named CI matrix entries for the dispatched commit, plus source
+security/license. Local rules check current npm advisories and the public CLI
+assets. It reuses existing push CI rather than rerunning general checks. Plan and
+Publish run no Please Behave or hooks. Publication refuses a changed planned
+version or source revision before tagging. See the release contract for CI reruns
+and readiness prerequisites.
 
 See [the release contract](docs/releasing.md) for versioning and publication.
 Contributions use the [PolyForm Noncommercial License 1.0.0](LICENSE).

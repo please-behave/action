@@ -9,7 +9,8 @@
   },
   "scripts": {
     "test": "please run --at pre-push",
-    "release": "node ./node_modules/semantic-release/bin/semantic-release.js"
+    "release:plan": "node scripts/release-plan.mjs",
+    "release": "node scripts/publish-release.mjs"
   },
   "devDependencies": {
     "@semantic-release/commit-analyzer": "13.0.1",

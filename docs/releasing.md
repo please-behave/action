@@ -1,14 +1,35 @@
 # Release contract
 
 The Action has its own version, independent of the selected CLI version.
-Only the manually dispatched Release workflow on `main` publishes. It calls CI
-and Action E2E at the dispatched revision before its publication job receives
-`contents: write`.
-The CI `Check` job and Action E2E `Test` job must succeed on Ubuntu 24.04
-x64 and ARM64. CI runs the `check` execution point through Please Behave.
-The publisher refuses an outdated revision and requires the public CLI release
-pinned in `.please-version`, both Linux archives plus SHA256SUMS. These publication
-conditions run directly through `python3 scripts/check-release-ready.py`.
+Only the manually dispatched Release workflow on `main` publishes. It follows
+Plan → parallel Release Readiness and Release Candidate → Publish. Every phase
+uses the dispatched source revision. No release-worthy commits means no readiness,
+candidate or publication work.
+
+Plan uses a Semantic Release dry run to determine the next version and source SHA
+without creating tags, commits or releases. Readiness uses the published governor
+pinned in `.please-version` at `release-readiness --checks-only`. The pinned
+external `release/readiness` ruleset verifies successful push CI for that exact
+commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
+`Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. It also checks committed-source
+sensitive filenames, secrets and license. Local rules run a current npm audit
+(blocking high/critical advisories) and `scripts/check-release-ready.py`, which
+requires unchanged main and the public stable CLI release pinned in `.please-version`,
+both Linux archives and SHA256SUMS. API and audit failures block publication.
+
+Readiness does not restart or wait for CI. Its policy is `.please/release-ci.json`.
+The newest matching CI run must succeed; missing, running, failed or incomplete
+proof blocks. Partial reruns may retain successful jobs from earlier attempts of
+that same run; unrelated runs cannot combine. CI remains independent of Release.
+
+Release Candidate calls the existing Action E2E workflow, running the checked-out
+composite Action on Ubuntu 24.04 x64 and ARM64. Both entries must succeed. It
+produces no native artifacts: the Action publishes its tested source tree. Publish
+requires Plan, Readiness and the entire Candidate matrix to succeed. Semantic
+Release rechecks the planned version, local HEAD, dispatched SHA and remote main
+in its `verifyRelease` hook before tagging. If main or the planned version changes,
+publication is refused; dispatch again from the latest main. These checks are not
+an atomic lock against concurrent changes.
 
 Semantic Release creates the tag and GitHub Release. It publishes no npm package,
 native assets, changelog, generated version file, release commit or moving major
@@ -45,6 +66,8 @@ Acceptance criteria:
   remote, publishes 1.0.0, then 1.0.1, 1.1.0 and 2.0.0 for fix, feature and breaking
   commits. Documentation alone and repeated publication create no tag or commit.
 - Policy tests cover breaking syntax, maintenance types, security fixes and reverts.
+- Offline release tests verify an inert dry run and reject changed planned versions,
+  dispatched SHAs and remote main before tagging; no-release previews publish nothing.
 - Offline installer tests verify checksums, invalid inputs/platforms, failed
   downloads, PATH export, cleanup, argument boundaries and exit-code propagation.
 - The Action execution command passes the execution point as one argument and
@@ -60,16 +83,16 @@ Install development dependencies with `npm ci --ignore-scripts` (Node 26), the
 released governor pinned in `.please-version`, and the tools listed in
 [Contributing](../CONTRIBUTING.md). Install managed hooks and synchronize external
 rules with `sh scripts/setup-git-hooks.sh --yes`. CI installs the governor through
-the published Action pinned to the full commit SHA for `v1.1.0` after checkout,
+the published Action pinned to the full commit SHA for `v1.1.1` after checkout,
 synchronizes imports and invokes the same published Action to run `check` with
 a Job Summary. Installation-only mode remains necessary before synchronization;
-the execution invocation installs the same CLI version again. The Release workflow
-calls reusable CI through `checks` and reusable Action E2E through `action-e2e`
-in parallel. The `publish` job depends on both through
-`needs: [checks, action-e2e]`, preserving both validation gates. The publish job uses
-a fresh runner, prepares Node dependencies and runs the release-readiness script
-before invoking Semantic Release. It does not install or configure Please Behave
-or Git hooks.
+the execution invocation installs the same CLI version again. Readiness installs
+the same pinned governor and prepares npm dependencies and Gitleaks before rule
+execution. Plan and Publish prepare only Node dependencies and never install
+Please Behave or Git hooks. Plan needs `contents: write` because Semantic Release
+verifies push access even during a dry run; Publish needs it to create release tags
+and the GitHub Release. Readiness needs `contents: read` and `actions: read`;
+Candidate needs only `contents: read`.
 
 The imported local `commit-msg` hook validates messages. CI does not validate
 commit ranges or PR titles. Semantic Release still analyzes commits for version
@@ -85,14 +108,15 @@ tag is used. Semantic Release writes release tags and Git notes, not `main`.
 
 The active `main` branch ruleset prevents deletion. It currently permits history
 replacement and has no required status checks. The maintainer pushes directly to
-`main`, with dependency PRs from Renovate. Publishing always requires CI and
-Action E2E on both architectures through their reusable workflows, regardless
-of branch protection settings. Repository protection settings are managed separately;
+`main`, with dependency PRs from Renovate. Publishing always requires exact-commit
+CI proof and Action E2E on both architectures, regardless of branch protection
+settings. Repository protection settings are managed separately;
 do not restrict release tags or `refs/notes/*`.
 
 If required status checks are configured, replace references to the old `tests`
-and `summaries` jobs with the new CI `Check` and Action E2E `Test` checks for both
-matrix variants. Use the actual check names emitted by GitHub, including reusable
+and `summaries` jobs with the CI `Check (ubuntu-24.04)` and
+`Check (ubuntu-24.04-arm)` checks and Action E2E `Test` checks for both matrix
+variants. Use the actual check names emitted by GitHub, including reusable
 workflow prefixes where applicable. This refactor does not change remote branch
 protection settings.
 
@@ -105,8 +129,10 @@ an authorized maintainer can dispatch:
 gh workflow run release.yml --ref main --repo please-behave/action
 ```
 
-The workflow reruns CI and Action E2E; it cannot skip validation via dispatch
-inputs. Publication is serialized and does not cancel an active release. GitHub's default concurrency
+The workflow reuses successful push-CI proof and reruns Action E2E after planning;
+it cannot skip validation via dispatch inputs. If CI is not ready, let the
+independent CI workflow finish and dispatch Release again. Publication is serialized
+and does not cancel an active release. GitHub's default concurrency
 queue can replace a pending dispatch. No branch write or protection bypass is
 required. A publication failure can leave a tag without a GitHub Release; inspect
 both remote states before retrying. Published immutable releases cannot be repaired

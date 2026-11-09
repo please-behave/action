@@ -27,6 +27,8 @@ export function checkRepository(root) {
     assert.equal(documented, input.default ?? "None", `Default input: ${name}`);
   }
   const manifest = JSON.parse(text("package.json"));
+  assert.equal(manifest.scripts["release:plan"], "node scripts/release-plan.mjs");
+  assert.equal(manifest.scripts.release, "node scripts/publish-release.mjs");
   const lock = JSON.parse(text("package-lock.json"));
   assert.equal(lock.name, manifest.name, "Lockfile package name");
   for (const key of ["name", "license", "engines", "devDependencies"]) {
@@ -41,19 +43,42 @@ export function checkRepository(root) {
   const e2e = yaml(".github/workflows/action-e2e.yml");
   const release = yaml(".github/workflows/release.yml");
   assert.deepEqual(Object.keys(release.on), ["workflow_dispatch"], "Releases must remain manual");
-  assert.deepEqual(Object.keys(release.jobs).sort(), ["action-e2e", "checks", "publish"]);
-  assert.deepEqual(release.jobs.publish.needs, ["checks", "action-e2e"]);
-  assert.equal(release.jobs.publish["runs-on"], "ubuntu-24.04");
-  for (const step of release.jobs.publish.steps) {
-    assert.notEqual(step.uses, "./", "Publish must not install the governor");
-    assert.doesNotMatch(step.uses ?? "", /^please-behave\/action@/, "Publish must not install the governor");
-    assert.doesNotMatch(step.run ?? "", /\bplease\b/, "Publish must not run Please Behave");
+  assert.deepEqual(Object.keys(release.jobs).sort(), ["plan", "publish", "release-candidate", "release-readiness"]);
+  assert.deepEqual(release.jobs.publish.needs, ["plan", "release-readiness", "release-candidate"]);
+  assert.equal(release.jobs.plan.if, "github.ref == 'refs/heads/main'");
+  assert.equal(release.jobs.plan.outputs.source_sha, "${{ steps.plan.outputs.source_sha }}");
+  assert.equal(release.jobs.plan.outputs.version, "${{ steps.plan.outputs.version }}");
+  assert.equal(release.jobs.plan.outputs.release, "${{ steps.plan.outputs.release }}");
+  for (const id of ["release-readiness", "release-candidate"]) {
+    assert.equal(release.jobs[id].needs, "plan");
+    assert.equal(release.jobs[id].if, "needs.plan.outputs.release == 'true'");
   }
-  assert.equal(release.jobs.checks.uses, "./.github/workflows/ci.yml");
-  assert.equal(release.jobs.checks.if, "github.ref == 'refs/heads/main'");
-  assert.equal(release.jobs["action-e2e"].uses, "./.github/workflows/action-e2e.yml");
-  assert.equal(release.jobs["action-e2e"].if, "github.ref == 'refs/heads/main'");
-  for (const [workflow, name, id, display] of [[ci, "CI", "check", "Check"], [e2e, "Action E2E", "test", "Test"]]) {
+  assert.equal(release.jobs["release-candidate"].uses, "./.github/workflows/action-e2e.yml");
+  assert.match(release.jobs.publish.if, /needs.release-readiness.result == 'success'/);
+  assert.match(release.jobs.publish.if, /needs.release-candidate.result == 'success'/);
+  assert.equal(release.jobs.publish["runs-on"], "ubuntu-24.04");
+  for (const id of ["plan", "publish"]) {
+    const steps = release.jobs[id].steps;
+    for (const step of steps) {
+      assert.notEqual(step.uses, "./", "Plan and Publish must not install the governor");
+      assert.doesNotMatch(step.uses ?? "", /^please-behave\/action@/);
+      assert.doesNotMatch(step.run ?? "", /\bplease\b/, "Plan and Publish must not run Please Behave");
+    }
+    assert.equal(steps[0].with.ref, id === "plan" ? "${{ github.sha }}" : "${{ needs.plan.outputs.source_sha }}");
+  }
+  assert.ok(release.jobs.plan.steps.some(step => step.run === "npm run release:plan"));
+  const publication = release.jobs.publish.steps.find(step => step.run === "npm run release");
+  assert.equal(publication.env.EXPECTED_RELEASE_VERSION, "${{ needs.plan.outputs.version }}");
+  const readiness = release.jobs["release-readiness"];
+  assert.deepEqual(readiness.permissions, { contents: "read", actions: "read" });
+  assert.equal(readiness.steps[0].with.ref, "${{ needs.plan.outputs.source_sha }}");
+  assert.ok(readiness.steps.some(step => step.run === "please run --at release-readiness --checks-only"));
+  const policy = JSON.parse(text(".please/release-ci.json"));
+  assert.deepEqual(policy, {
+    schema_version: 1, repository: "please-behave/action", workflow: ".github/workflows/ci.yml",
+    event: "push", branch: "main", required_jobs: ["Check (ubuntu-24.04)", "Check (ubuntu-24.04-arm)"],
+  });
+  for (const [workflow, name, id, display] of [[ci, "CI", "check", "Check (${{ matrix.os }})"], [e2e, "Action E2E", "test", "Test"]]) {
     assert.equal(workflow.name, name);
     assert.deepEqual(Object.keys(workflow.jobs), [id]);
     assert.equal(workflow.jobs[id].name, display);
@@ -72,6 +97,7 @@ export function checkRepository(root) {
     ["Prepare isolated summary acceptance fixture", "Verify Action outcomes and independent summaries"]);
   assert.deepEqual(release.permissions, { contents: "read" });
   assert.deepEqual(release.jobs.publish.permissions, { contents: "write" });
+  assert.deepEqual(release.jobs.plan.permissions, { contents: "write" });
   const invocations = e2e.jobs.test.steps.filter(step => step.uses === "./");
   assert.deepEqual(invocations.map(step => step.with["execution-point"]), ["summary-first", "summary-second"]);
   const fixture = e2e.jobs.test.steps.find(step => step.name === "Prepare isolated summary acceptance fixture");
@@ -103,7 +129,8 @@ export function checkRepository(root) {
         }
         if (step.uses === "./" || step.uses?.startsWith("please-behave/action@")) {
           assert.ok(checkedOut, "Checkout must precede the governor Action");
-          assert.equal(step.with.version, version, "CLI pin must match .please-version");
+          assert.equal(step.with.version, workflow === release ? "${{ steps.governor.outputs.version }}" : version,
+            "CLI pin must match .please-version");
         }
         if (step.uses && !step.uses.startsWith("./")) {
           assert.match(step.uses, /@[a-f0-9]{40}$/, "External Actions require full SHA pins");
@@ -120,7 +147,7 @@ export function checkRepository(root) {
   const synchronization = ci.jobs.check.steps.findIndex(step => step.run === "please sync --yes");
   assert.ok(ci.jobs.check.steps.indexOf(installation) < synchronization);
   assert.ok(synchronization < ci.jobs.check.steps.indexOf(quality));
-  assert.ok(release.jobs.publish.steps.some(step => step.run === "python3 scripts/check-release-ready.py"));
+
   for (const file of ["README.md", "CONTRIBUTING.md", "docs/releasing.md"]) {
     for (const match of text(file).matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
       const target = match[1].split("#")[0];

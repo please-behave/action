@@ -7,6 +7,7 @@ import { Writable } from "node:stream";
 import { generateNotes } from "@semantic-release/release-notes-generator";
 import semanticRelease from "semantic-release";
 import config from "../release.config.mjs";
+import { verifyRelease } from "../scripts/semantic-release-plugin.mjs";
 import { analyzeCommits } from "@semantic-release/commit-analyzer";
 
 const logger = { log() {}, error() {}, success() {} };
@@ -62,7 +63,8 @@ await testPolicy();
     };
     const published = [];
     const sink = new Writable({ write(_chunk, _encoding, done) { done(); } });
-    const run = () => semanticRelease({
+    const run = (version, dryRun = false, overrides = {}) => semanticRelease({
+      dryRun,
       ...config,
       ci: false,
       repositoryUrl: remote,
@@ -71,17 +73,26 @@ await testPolicy();
         { generateNotes: (_options, context) => generateNotes(config.plugins[1][1], {
           ...context, options: { ...context.options, repositoryUrl: config.repositoryUrl },
         }) },
+        ...(dryRun ? [] : [{ verifyRelease }]),
         { publish: async (_options, context) => {
           published.push({ ...context.nextRelease });
           return { name: "Offline publication fixture" };
         } },
       ],
-    }, { cwd, env, stdout: sink, stderr: sink });
+    }, { cwd, env: { ...env, GITHUB_SHA: git("rev-parse", "HEAD"),
+      EXPECTED_RELEASE_VERSION: version, ...overrides }, stdout: sink, stderr: sink });
 
     commit("feat: initial release of Please Behave Action");
     const initialHead = git("rev-parse", "HEAD");
     assert.equal(git("tag"), "");
-    const first = await run();
+    const preview = await run("1.0.0", true);
+    assert.equal(preview.nextRelease.version, "1.0.0");
+    assert.equal(git("tag"), "");
+    assert.equal(published.length, 0);
+    await assert.rejects(run("9.9.9"), /version changed/);
+    await assert.rejects(run("1.0.0", false, { GITHUB_SHA: "0".repeat(40) }), /main changed/);
+    assert.equal(git("tag"), "");
+    const first = await run("1.0.0");
     assert.equal(first.nextRelease.version, "1.0.0");
     assert.equal(first.nextRelease.gitTag, "v1.0.0");
     assert.equal(git("ls-remote", "--tags", "origin"), `${initialHead}\trefs/tags/v1.0.0`);
@@ -89,17 +100,24 @@ await testPolicy();
     assert.equal(git("status", "--porcelain"), "");
     assert.equal(published[0].gitHead, initialHead);
     assert.match(published[0].notes, /initial release of Please Behave Action/);
-    assert.equal(await run(), false);
+    assert.equal(await run("1.0.0"), false);
     assert.equal(published.length, 1);
 
     commit("fix(action): preserve status");
-    assert.equal((await run()).nextRelease.version, "1.0.1");
+    const testedHead = git("rev-parse", "HEAD");
+    execFileSync("git", ["--git-dir", remote, "update-ref", "refs/heads/main", initialHead], { env });
+    assert.throws(() => verifyRelease({}, { cwd, env: { ...env, GITHUB_SHA: testedHead,
+      EXPECTED_RELEASE_VERSION: "1.0.1" }, nextRelease: { version: "1.0.1" } }), /main changed/);
+    assert.equal(git("tag"), "v1.0.0");
+    execFileSync("git", ["--git-dir", remote, "update-ref", "refs/heads/main", testedHead], { env });
+    assert.equal((await run("1.0.1")).nextRelease.version, "1.0.1");
     commit("feat(action): extend installation");
-    assert.equal((await run()).nextRelease.version, "1.1.0");
+    assert.equal((await run("1.1.0")).nextRelease.version, "1.1.0");
     commit("feat(action)!: change input contract");
-    assert.equal((await run()).nextRelease.version, "2.0.0");
+    assert.equal((await run("2.0.0")).nextRelease.version, "2.0.0");
     commit("docs: explain input");
-    assert.equal(await run(), false);
+    assert.equal(await run("2.0.0", true), false);
+    assert.equal(await run("2.0.0"), false);
     assert.equal(published.length, 4);
     assert.equal(git("tag"), "v1.0.0\nv1.0.1\nv1.1.0\nv2.0.0");
     assert.equal(git("rev-list", "--count", "HEAD"), "5");
