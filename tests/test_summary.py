@@ -61,8 +61,10 @@ class SummaryTests(unittest.TestCase):
         for i, status in enumerate(("PASS", "FAIL", "ERROR", "NOT_RUN", "CANCELLED")):
             self.assertIn(f"| {i+1}/5 | {status}", text)
             self.assertIn(f"Description {i} | {i*123} ms", text)
-        self.assertIn("FAIL (advisory)", text)
-        self.assertLess(text.index("rule&#45;0"), text.index("rule&#45;4"))
+        self.assertIn("FAIL (non-blocking)", text)
+        self.assertLess(text.index("Description 0"), text.index("Description 4"))
+        self.assertIn("| 1/5 | PASS | Same name |", text)
+        self.assertNotIn("(blocking)", text)
         self.assertIn("### Integrity diagnostics", text)
         self.assertIn("Incomplete &#60;snapshot&#62;", text)
         self.assertEqual((self.root / "invocations").read_text().splitlines(), ["run", "--at", "check"])
@@ -74,7 +76,22 @@ class SummaryTests(unittest.TestCase):
         self.save()
         self.assertEqual(self.run_action().returncode, 0)
         self.assertIn("**PASS**", self.output.read_text())
-        self.assertIn("FAIL (advisory)", self.output.read_text())
+        self.assertIn("FAIL (non-blocking)", self.output.read_text())
+
+    def test_external_id_is_hidden_and_unnamed_rules_use_short_id(self):
+        identity = "git:" + "a" * 64 + ":multi-point/security:1:secret-scan"
+        self.report["plan"]["scheduled"][0].update(id=identity, name="Secret scan")
+        self.report["results"][-1]["id"] = identity
+        unnamed = "git:" + "b" * 64 + ":multi-point/security:1:sensitive-files"
+        self.report["plan"]["scheduled"][1].update(id=unnamed, name=None)
+        self.report["results"][-2]["id"] = unnamed
+        self.save()
+        self.assertEqual(self.run_action().returncode, 0)
+        text = self.output.read_text()
+        self.assertIn("| PASS | Secret scan | Description 0 |", text)
+        self.assertIn("| FAIL (non-blocking) | sensitive&#45;files | Description 1 |", text)
+        self.assertNotIn("git&#58;", text)
+        self.assertNotIn("technical ID", text)
 
     def test_stale_report_is_restored_and_never_rendered(self):
         self.slot.write_bytes(b"previous report")

@@ -98,10 +98,12 @@ Use `summary: 'false'` to bypass all summary processing. Install-only mode
 
 The summary shows the CLI aggregate outcome, exact exit code, measured CLI wall
 clock duration and a table in `plan.scheduled` order. Each row shows its plan
-position, CLI status, blocking/advisory enforcement, name, technical ID,
-description and saved duration in milliseconds. Results match by technical ID
-and kind, so duplicate names and parallel completion cannot change row identity
-or order. PASS, FAIL, ERROR, NOT_RUN and CANCELLED remain CLI statuses. Advisory
+position, CLI status, rule name, description and saved duration in milliseconds.
+Only non-blocking rules carry an enforcement label: `PASS (non-blocking)`, for
+example. Blocking is the default and has no label. Names fall back to the final
+segment of the technical ID when unnamed; full IDs remain in the saved report.
+Results match by technical ID and kind, so duplicate names and parallel completion cannot change row identity
+or order. PASS, FAIL, ERROR, NOT_RUN and CANCELLED remain CLI statuses. Non-blocking
 failures stay visible; the CLI aggregate outcome remains authoritative. Integrity
 diagnostics appear separately, and empty plans are labeled explicitly.
 

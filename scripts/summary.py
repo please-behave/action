@@ -89,16 +89,16 @@ def render(report, point, code, elapsed):
     if not rules:
         lines.append("No rules were scheduled for this execution point.\n\n")
     else:
-        lines.append("| Plan | Status | Rule name (technical ID) | Description | Duration |\n"
+        lines.append("| Plan | Status | Rule name | Description | Duration |\n"
                      "| --- | --- | --- | --- | --- |\n")
         for index, rule in enumerate(rules, 1):
             result = results[rule["id"]]
-            enforcement = "blocking" if rule["blocking"] else "advisory"
+            enforcement = "" if rule["blocking"] else " (non-blocking)"
             name = rule.get("name") or rule["id"].rsplit(":", 1)[-1]
-            lines.append(f"| {index}/{len(rules)} | {result['status']} ({enforcement}) | "
-                         f"{escape(name)} ({escape(rule['id'])}) | {escape(rule['description'])} | "
+            lines.append(f"| {index}/{len(rules)} | {result['status']}{enforcement} | "
+                         f"{escape(name)} | {escape(rule['description'])} | "
                          f"{result['duration_ms']} ms |\n")
-        lines.append("\nAdvisory results do not replace the CLI aggregate outcome; configuration errors can still block.\n\n")
+        lines.append("\nNon-blocking results do not replace the CLI aggregate outcome; configuration errors can still block.\n\n")
     if integrity:
         lines.append("### Integrity diagnostics\n\n")
         for result in integrity:

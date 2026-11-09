@@ -33,7 +33,9 @@ Acceptance criteria:
   bypass report processing; install-only mode is unchanged. The CLI exit code
   survives missing, stale, malformed, unsupported reports and rendering errors.
 - Summary rows follow the scheduled plan and match technical identities. Status,
-  enforcement, descriptions and durations come from the saved report. Integrity
+  enforcement, names, descriptions and durations come from the saved report.
+  Rule cells omit technical IDs, unnamed rules use the final ID segment, and
+  only non-blocking rules carry an enforcement label. Integrity
   diagnostics are separate; empty plans and unsuccessful exits are explicit.
 - Offline tests cover report isolation/restoration, independent sequential runs,
   escaping and bounded output. Hosted composite tests verify repeated invocation
