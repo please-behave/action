@@ -35,14 +35,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes shellcheck
       - name: Install released governor
-        uses: please-behave/action@e932d80af960ea29d3da4ff77c35e1b1378dc9ba # v1.1.0
+        uses: please-behave/action@3f726664f6a18193ac1bfa0f542e34ba76f24523 # v1.1.1
         with:
           version: v0.3.1
           run: 'false'
       - name: Synchronize governance
         run: please sync --yes
       - name: Run quality gates
-        uses: please-behave/action@e932d80af960ea29d3da4ff77c35e1b1378dc9ba # v1.1.0
+        uses: please-behave/action@3f726664f6a18193ac1bfa0f542e34ba76f24523 # v1.1.1
         with:
           version: v0.3.1
           execution-point: check
