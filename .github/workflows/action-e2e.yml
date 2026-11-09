@@ -52,7 +52,7 @@ jobs:
         id: passing
         uses: ./
         with:
-          version: v0.1.0
+          version: v0.3.1
           execution-point: summary-first
       - name: Invoke Action expecting governance failure
         id: failing
@@ -62,7 +62,7 @@ jobs:
         env:
           FIXTURE_RESULT: '1'
         with:
-          version: v0.1.0
+          version: v0.3.1
           execution-point: summary-second
       - name: Verify Action outcomes and independent summaries
         if: always()

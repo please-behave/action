@@ -7,7 +7,7 @@ per-invocation GitHub Job Summaries.
 
 ## Usage
 
-The examples use Action `v1.1.0`, which includes Job Summaries, with CLI `v0.1.0`.
+The examples use Action `v1.1.0`, which includes Job Summaries, with CLI `v0.3.1`.
 Use CLI `v0.1.0` or a compatible later stable release. The Action ref and CLI
 version are independent.
 
@@ -24,7 +24,7 @@ jobs:
           persist-credentials: false
       - uses: please-behave/action@v1.1.0
         with:
-          version: v0.1.0
+          version: v0.3.1
           execution-point: check
 ```
 
@@ -81,7 +81,7 @@ steps:
       persist-credentials: false
   - uses: please-behave/action@v1.1.0
     with:
-      version: v0.1.0
+      version: v0.3.1
       run: 'false'
   - run: please run --at check
     working-directory: source
@@ -132,7 +132,7 @@ GitHub displays at most 20 step summaries per job.
 ## Version selection and pinning
 
 `uses: please-behave/action@v1.1.0` selects the Action implementation;
-`with.version: v0.1.0` selects the downloaded CLI. Updating one does not update
+`with.version: v0.3.1` selects the downloaded CLI. Updating one does not update
 the other. The Action has no default CLI version and accepts only exact stable
 CLI tags. Consult the CLI release notes before changing the selected version.
 
