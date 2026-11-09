@@ -57,6 +57,11 @@ export function checkRepository(root) {
   assert.deepEqual(ci.jobs.summaries.strategy.matrix.os, ["ubuntu-24.04", "ubuntu-24.04-arm"]);
   const invocations = ci.jobs.summaries.steps.filter(step => step.uses === "./");
   assert.deepEqual(invocations.map(step => step.with["execution-point"]), ["summary-first", "summary-second"]);
+  const fixture = ci.jobs.summaries.steps.find(step => step.name === "Prepare isolated summary acceptance fixture");
+  const customPoints = fixture.run.match(/\[execution_points\]\s+custom = (\[[^\n]+\])/);
+  assert.ok(customPoints, "Summary fixture must declare its custom execution points");
+  assert.deepEqual(JSON.parse(customPoints[1]), invocations.map(step => step.with["execution-point"]),
+    "Summary fixture declarations must match the Action invocations");
   assert.equal(invocations[1]["continue-on-error"], true);
   for (const workflow of [ci, release]) {
     for (const job of Object.values(workflow.jobs)) {

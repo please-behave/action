@@ -40,6 +40,9 @@ class RepositoryTests(unittest.TestCase):
                  (".github/workflows/release.yml", "      - run: npm ci --ignore-scripts",
                   "      - uses: ./\n      - run: npm ci --ignore-scripts"),
                  (".github/workflows/ci.yml", "os: [ubuntu-24.04, ubuntu-24.04-arm]", "os: [ubuntu-24.04]"),
+                 (".github/workflows/ci.yml", '[execution_points]', '[undeclared_points]'),
+                 (".github/workflows/ci.yml", 'custom = ["summary-first", "summary-second"]',
+                  'custom = ["summary-first"]'),
                  ("README.md", "](LICENSE)", "](MISSING)")]
         for name, before, after in cases:
             with self.subTest(name=name):

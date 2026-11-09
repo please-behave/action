@@ -65,7 +65,11 @@ jobs:
         run: |
           mv .please "$RUNNER_TEMP/original-please"
           mkdir -p .please/checks/fixture "$RUNNER_TEMP/summary-tools"
-          printf 'project = "Summary acceptance"\n' > .please/config.toml
+          cat > .please/config.toml <<'EOF'
+          project = "Summary acceptance"
+          [execution_points]
+          custom = ["summary-first", "summary-second"]
+          EOF
           cat > .please/checks/fixture/rule.toml <<'EOF'
           id = "fixture"
           description = "Hosted composite summary acceptance"
