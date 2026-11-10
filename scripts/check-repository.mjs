@@ -76,7 +76,13 @@ export function checkRepository(root) {
   const readiness = release.jobs["release-readiness"];
   assert.deepEqual(readiness.permissions, { contents: "read", actions: "read" });
   assert.equal(readiness.steps[0].with.ref, "${{ needs.plan.outputs.source_sha }}");
-  assert.ok(readiness.steps.some(step => step.run === "please run --at release-readiness --checks-only"));
+  const readinessExecution = readiness.steps.find(step => step.with?.["execution-point"] === "release-readiness");
+  assert.ok(readinessExecution, "Readiness executes through the published Action");
+  assert.deepEqual(readinessExecution.with, {
+    version: "${{ steps.governor.outputs.version }}", "execution-point": "release-readiness",
+    "checks-only": "true", summary: "true",
+  });
+  assert.ok(readiness.steps.every(step => !/\bplease run\b/.test(step.run ?? "")));
   const policy = JSON.parse(text(".please/release-ci.json"));
   assert.deepEqual(policy, {
     schema_version: 1, repository: "please-behave/action", workflow: ".github/workflows/ci.yml",
@@ -149,6 +155,7 @@ export function checkRepository(root) {
   const installation = ci.jobs.check.steps.find(step => step.name === "Install released governor");
   assert.match(quality.uses, /^please-behave\/action@[a-f0-9]{40}$/);
   assert.equal(quality.uses, installation.uses, "Installation and execution use the same published Action");
+  assert.equal(readinessExecution.uses, quality.uses);
   assert.deepEqual(quality.with, { version, "execution-point": "check", summary: "true" });
   assert.equal(installation.with.run, "false");
   const synchronization = ci.jobs.check.steps.findIndex(step => step.run === "please sync --yes");

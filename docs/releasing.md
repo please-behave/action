@@ -87,12 +87,13 @@ Install development dependencies with `npm ci --ignore-scripts` (Node 26), the
 released governor pinned in `.please-version`, and the tools listed in
 [Contributing](../CONTRIBUTING.md). Install managed hooks and synchronize external
 rules with `sh scripts/setup-git-hooks.sh --yes`. CI installs the governor through
-the published Action pinned to the full commit SHA for `v1.1.1` after checkout,
+the published Action pinned to the full commit SHA for `v1.2.0` after checkout,
 synchronizes imports and invokes the same published Action to run `check` with
 a Job Summary. Installation-only mode remains necessary before synchronization;
 the execution invocation installs the same CLI version again. Readiness installs
 the same pinned governor and prepares npm dependencies and Gitleaks before rule
-execution. Plan and Publish prepare only Node dependencies and never install
+execution, then invokes the published Action with `checks-only` and summaries
+enabled. Plan and Publish prepare only Node dependencies and never install
 Please Behave or Git hooks. Plan needs `contents: write` because Semantic Release
 verifies push access even during a dry run; Publish needs it to create release tags
 and the GitHub Release. Readiness needs `contents: read` and `actions: read`;
@@ -144,14 +145,10 @@ required. A publication failure can leave a tag without a GitHub Release; inspec
 both remote states before retrying. Published immutable releases cannot be repaired
 by moving a tag or replacing assets; publish a new version when needed.
 
-Consumer migration for macOS and checks-only execution must wait until this
-Action support is published. Then pin the published Action SHA in CLI, Action,
-PassingBy, Passbird and PumpBuddy workflows, replace direct governance runs with
-Action invocations, and explicitly enable summaries. Preserve existing checks-only
-selection, environments and native build targets. Prepare Passbird's virtual
-display before Action execution. Keep the published CLI governor pins unchanged.
-The Action repository's own governance must use the published release, never its
-candidate source; local Action invocations remain confined to acceptance tests.
+Repository CI and Readiness use published Action v1.2.0 pinned to
+`722d5967c094e5ac4bfe25e9f82b020ff34e9487`, with summaries enabled.
+The Action repository's own governance uses the published release; local Action
+invocations remain confined to acceptance tests.
 
 After publication, inspect the actual GitHub Release, resolve its tag to the
 tested SHA and check action.yml, scripts/install.sh and README.md in that tree.

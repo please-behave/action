@@ -49,6 +49,8 @@ class RepositoryTests(unittest.TestCase):
                  (".github/workflows/ci.yml", "    name: Check", "    name: Tests"),
                  (".github/workflows/ci.yml", "  check:", "  tests:"),
                  (".github/workflows/ci.yml", "          execution-point: check", "          execution-point: pre-push"),
+                 (".github/workflows/release.yml", "          summary: 'true'", "          summary: 'false'"),
+                 (".github/workflows/release.yml", "          checks-only: 'true'", "          checks-only: 'false'"),
                  (".github/workflows/ci.yml", "          summary: 'true'", "          summary: 'false'"),
                  (".github/workflows/ci.yml", "          summary: 'true'", "          run: 'false'"),
                  (".github/workflows/action-e2e.yml", "name: Action E2E", "name: CI"),
