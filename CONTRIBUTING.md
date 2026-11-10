@@ -6,14 +6,14 @@ Install the released Please Behave version pinned in `.please-version`; never
 use a candidate CLI build as the governor. Prepare Node dependencies with
 `npm ci --ignore-scripts`, then install managed Git hooks and synchronize the
 pinned external rulesets with `sh scripts/setup-git-hooks.sh --yes`.
-Setup needs network access; local validation uses prepared dependencies offline.
+Setup needs network access; pre-commit and pre-push use prepared dependencies offline.
 
 Please Behave owns the repository's quality gates:
 
 | Execution point | Checks |
 | --- | --- |
 | `pre-commit` | Repository metadata/documentation contracts and standalone shell scripts |
-| `commit-msg` | Imported Conventional Commits validator |
+| `commit-msg` | Imported Conventional Commits Check and advisory header wording Review |
 | `pre-push` | Offline Python and Node tests, workflow/shell/contract checks, imported security and license checks |
 | `check` | The same quality gates as `pre-push`, on the CI checkout |
 | `release-readiness` | Exact-commit CI proof, committed-source security/license, current npm audit and public CLI assets |
@@ -27,6 +27,15 @@ Keep new repository checks in `.please/` and reuse the configured external rules
 The imported `conventional-commits` ruleset is the authoritative message validator.
 Scopes are optional and configured in `.please/commit-scopes.txt`: action, ci,
 deps, docs, git, release and tests. There is no additional local message policy.
+The shared advisory Review evaluates only the header for specific English
+imperative wording, without the diff, body or repository files. Its
+`gemini-flash-lite` provider is independently imported from
+`providers/gemini-flash-lite` in the same external repository; no adapter is copied
+locally. All four Rule Sets and the provider share one immutable revision.
+Export GEMINI_API_KEY in the shell running Git. Review FAIL and ERROR, including
+missing credentials, remain visible without blocking commits. The adapter allows
+three attempts with 1/3-second waits, 20 seconds per request and a 70-second
+provider deadline.
 Commit-message validation runs only in the managed local `commit-msg` hook;
 CI checks neither history nor PR titles. This repository uses direct maintainer
 pushes to `main`, with dependency PRs from Renovate.

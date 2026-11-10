@@ -94,7 +94,9 @@ verifies push access even during a dry run; Publish needs it to create release t
 and the GitHub Release. Readiness needs `contents: read` and `actions: read`;
 Candidate needs only `contents: read`.
 
-The imported local `commit-msg` hook validates messages. CI does not validate
+The managed `commit-msg` hook runs the imported syntax Check and advisory
+header-only wording Review through the independently imported Gemini provider.
+The published v0.5.0 governor supports both imports. CI does not validate
 commit ranges or PR titles. Semantic Release still analyzes commits for version
 selection; that publication operation is separate from message validation.
 

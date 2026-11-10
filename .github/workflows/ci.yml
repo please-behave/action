@@ -37,14 +37,14 @@ jobs:
       - name: Install released governor
         uses: please-behave/action@3f726664f6a18193ac1bfa0f542e34ba76f24523 # v1.1.1
         with:
-          version: v0.3.1
+          version: v0.5.0
           run: 'false'
       - name: Synchronize governance
         run: please sync --yes
       - name: Run quality gates
         uses: please-behave/action@3f726664f6a18193ac1bfa0f542e34ba76f24523 # v1.1.1
         with:
-          version: v0.3.1
+          version: v0.5.0
           execution-point: check
           summary: 'true'
       - name: Upload governance report
