@@ -14,14 +14,16 @@ if [[ "$PLEASE_SUMMARY" != true && "$PLEASE_SUMMARY" != false ]]; then
   echo "::error::summary must be true or false." >&2
   exit 1
 fi
-if [[ "$RUNNER_OS" != Linux ]]; then
-  echo "::error::The Please Behave Action supports GitHub-hosted Ubuntu 24.04 runners only." >&2
+if [[ "${PLEASE_CHECKS_ONLY-false}" != true && "${PLEASE_CHECKS_ONLY-false}" != false ]]; then
+  echo "::error::checks-only must be true or false." >&2
   exit 1
 fi
-case "$RUNNER_ARCH" in
-  X64) target=x86_64-unknown-linux-gnu ;;
-  ARM64) target=aarch64-unknown-linux-gnu ;;
-  *) echo "::error::Unsupported Ubuntu runner architecture: $RUNNER_ARCH" >&2; exit 1 ;;
+case "$RUNNER_OS/$RUNNER_ARCH" in
+  Linux/X64) target=x86_64-unknown-linux-gnu ;;
+  Linux/ARM64) target=aarch64-unknown-linux-gnu ;;
+  macOS/X64) target=x86_64-apple-darwin ;;
+  macOS/ARM64) target=aarch64-apple-darwin ;;
+  *) echo "::error::Unsupported runner platform: $RUNNER_OS/$RUNNER_ARCH" >&2; exit 1 ;;
 esac
 
 work=$(mktemp -d "$RUNNER_TEMP/please-download.XXXXXX")
@@ -33,7 +35,11 @@ curl --fail --show-error --silent --location --retry 3 --connect-timeout 15 --ma
 curl --fail --show-error --silent --location --retry 3 --connect-timeout 15 --max-time 120 "$base/SHA256SUMS" -o "$work/SHA256SUMS"
 # Select exactly this archive; other platform downloads are not needed.
 awk -v archive="$archive" '$2 == archive && $1 ~ /^[0-9a-f]+$/ && length($1) == 64 { print; count++ } END { if (count != 1) exit 1 }' "$work/SHA256SUMS" > "$work/selected-sum"
-(cd "$work" && sha256sum --check selected-sum)
+if [[ "$RUNNER_OS" == macOS ]]; then
+  (cd "$work" && shasum -a 256 --check selected-sum)
+else
+  (cd "$work" && sha256sum --check selected-sum)
+fi
 tar -xzf "$work/$archive" -C "$work" -- "$name/please"
 if [[ ! -f "$work/$name/please" || -L "$work/$name/please" ]]; then
   echo "::error::Release archive has no regular please executable." >&2

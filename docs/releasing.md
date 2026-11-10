@@ -15,7 +15,7 @@ commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, incl
 sensitive filenames, secrets and license. Local rules run a current npm audit
 (blocking high/critical advisories) and `scripts/check-release-ready.py`, which
 requires unchanged main and the public stable CLI release pinned in `.please-version`,
-both Linux archives and SHA256SUMS. API and audit failures block publication.
+all four Linux/macOS archives and SHA256SUMS. API and audit failures block publication.
 
 Readiness does not restart or wait for CI. Its policy is `.please/release-ci.json`.
 The newest matching CI run must succeed; missing, running, failed or incomplete
@@ -23,8 +23,8 @@ proof blocks. Partial reruns may retain successful jobs from earlier attempts of
 that same run; unrelated runs cannot combine. CI remains independent of Release.
 
 Release Candidate calls the existing Action E2E workflow, running the checked-out
-composite Action on Ubuntu 24.04 x64 and ARM64. Both entries must succeed. It
-produces no native artifacts: the Action publishes its tested source tree. Publish
+composite Action on Ubuntu 24.04 x64/ARM64 and macOS ARM64/Intel. All four entries
+must succeed. It produces no native artifacts: the Action publishes its tested source tree. Publish
 requires Plan, Readiness and the entire Candidate matrix to succeed. Semantic
 Release rechecks the planned version, local HEAD, dispatched SHA and remote main
 in its `verifyRelease` hook before tagging. If main or the planned version changes,
@@ -60,7 +60,7 @@ Acceptance criteria:
   diagnostics are separate; empty plans and unsuccessful exits are explicit.
 - Offline tests cover report isolation/restoration, independent sequential runs,
   escaping and bounded output. Hosted composite tests verify repeated invocation
-  summaries and failure behavior on both supported runner architectures.
+  summaries and checks-only failure behavior on all four supported runner platforms.
 
 - The offline Semantic Release lifecycle starts from an empty isolated bare Git
   remote, publishes 1.0.0, then 1.0.1, 1.1.0 and 2.0.0 for fix, feature and breaking
@@ -70,12 +70,16 @@ Acceptance criteria:
   dispatched SHAs and remote main before tagging; no-release previews publish nothing.
 - Offline installer tests verify checksums, invalid inputs/platforms, failed
   downloads, PATH export, cleanup, argument boundaries and exit-code propagation.
+- macOS installation selects the matching native archive and verifies its checksum
+  with shasum; Linux retains sha256sum. Missing or corrupt assets block installation.
+- `checks-only` defaults to false and accepts only true/false. Enabled execution
+  passes `--checks-only` once, preserving summaries and the CLI exit code.
 - The Action execution command passes the execution point as one argument and
   propagates success and failure exit codes unchanged. The default point is
   `check`; install-only mode installs without invoking the CLI or requiring
   `.please/` configuration.
 - Tests exercise the installer script and execution command offline. Hosted
-  composite acceptance tests on both architectures cover repeated
+  composite acceptance tests on all four platforms cover repeated
   invocations, independent summaries and ordinary governance failures. CLI rule
   selection, configuration validation and exit-code normalization belong to the CLI.
 
@@ -117,7 +121,7 @@ do not restrict release tags or `refs/notes/*`.
 
 If required status checks are configured, replace references to the old `tests`
 and `summaries` jobs with the CI `Check (ubuntu-24.04)` and
-`Check (ubuntu-24.04-arm)` checks and Action E2E `Test` checks for both matrix
+`Check (ubuntu-24.04-arm)` checks and Action E2E `Test` checks for all four matrix
 variants. Use the actual check names emitted by GitHub, including reusable
 workflow prefixes where applicable. This refactor does not change remote branch
 protection settings.
@@ -139,6 +143,15 @@ queue can replace a pending dispatch. No branch write or protection bypass is
 required. A publication failure can leave a tag without a GitHub Release; inspect
 both remote states before retrying. Published immutable releases cannot be repaired
 by moving a tag or replacing assets; publish a new version when needed.
+
+Consumer migration for macOS and checks-only execution must wait until this
+Action support is published. Then pin the published Action SHA in CLI, Action,
+PassingBy, Passbird and PumpBuddy workflows, replace direct governance runs with
+Action invocations, and explicitly enable summaries. Preserve existing checks-only
+selection, environments and native build targets. Prepare Passbird's virtual
+display before Action execution. Keep the published CLI governor pins unchanged.
+The Action repository's own governance must use the published release, never its
+candidate source; local Action invocations remain confined to acceptance tests.
 
 After publication, inspect the actual GitHub Release, resolve its tag to the
 tested SHA and check action.yml, scripts/install.sh and README.md in that tree.

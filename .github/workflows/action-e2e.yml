@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, macos-15-intel]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
@@ -64,6 +64,7 @@ jobs:
         with:
           version: v0.5.0
           execution-point: summary-second
+          checks-only: 'true'
       - name: Verify Action outcomes and independent summaries
         if: always()
         env:

@@ -85,6 +85,22 @@ class ActionTests(unittest.TestCase):
         self.archive("aarch64-unknown-linux-gnu")
         self.assertEqual(self.install(RUNNER_ARCH="ARM64").returncode, 0)
 
+    def test_macos_archives_and_checksum_verification(self):
+        for arch, target in (("X64", "x86_64-apple-darwin"), ("ARM64", "aarch64-apple-darwin")):
+            with self.subTest(arch=arch):
+                self.archive(target)
+                self.path_file.unlink(missing_ok=True)
+                result = self.install(RUNNER_OS="macOS", RUNNER_ARCH=arch)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f"please-v1.2.3-{target}.tar.gz", (self.root / "downloads").read_text())
+                self.assertTrue(os.access(Path(self.path_file.read_text().strip()) / "please", os.X_OK))
+                self.path_file.unlink()
+                (self.assets / "SHA256SUMS").write_text("0" * 64 + f"  please-v1.2.3-{target}.tar.gz\n")
+                result = self.install(RUNNER_OS="macOS", RUNNER_ARCH=arch)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(self.path_file.exists())
+                self.assertFalse(list(self.root.glob("please-download.*")))
+
     def test_exact_version_selects_cli_release_urls(self):
         self.archive("x86_64-unknown-linux-gnu", version="v2.3.4")
         result = self.install(PLEASE_VERSION="v2.3.4", PLEASE_RUN="true")
@@ -118,7 +134,8 @@ class ActionTests(unittest.TestCase):
                     {"PLEASE_VERSION": "v1.2.3;echo injected"},
                     {"PLEASE_VERSION": "v01.2.3"}, {"PLEASE_VERSION": "v1.2.3-rc.1"}, {"PLEASE_RUN": "yes"},
                     {"PLEASE_SUMMARY": "yes"}, {"PLEASE_SUMMARY": "True"}, {"PLEASE_SUMMARY": ""},
-                    {"RUNNER_OS": "macOS"}, {"RUNNER_ARCH": "other"}):
+                    {"PLEASE_CHECKS_ONLY": "yes"}, {"PLEASE_CHECKS_ONLY": "True"}, {"PLEASE_CHECKS_ONLY": ""},
+                    {"RUNNER_OS": "Windows"}, {"RUNNER_ARCH": "other"}):
             with self.subTest(env=env):
                 result = self.install(**env)
                 self.assertNotEqual(result.returncode, 0)

@@ -10,8 +10,12 @@ export function checkRepository(root) {
   const metadata = yaml("action.yml");
   const readme = text("README.md");
   assert.equal(metadata.runs.using, "composite", "Action must remain composite");
-  assert.deepEqual(Object.keys(metadata.inputs).sort(), ["execution-point", "run", "summary", "version"]);
+  assert.deepEqual(Object.keys(metadata.inputs).sort(), ["checks-only", "execution-point", "run", "summary", "version"]);
   assert.equal(metadata.inputs.summary.default, "true");
+  assert.equal(metadata.inputs["checks-only"].default, "false");
+  for (const step of metadata.runs.steps) {
+    assert.equal(step.env.PLEASE_CHECKS_ONLY, "${{ inputs.checks-only }}");
+  }
   const execution = metadata.runs.steps.find(step => step.name === "Run Please Behave");
   assert.equal(execution.if, "inputs.run == 'true'");
   assert.equal(execution.env.PLEASE_SUMMARY, "${{ inputs.summary }}");
@@ -85,7 +89,9 @@ export function checkRepository(root) {
     assert.equal(workflow.jobs[id].needs, undefined, "CI and Action E2E run independently");
     assert.deepEqual(workflow.on, { push: { branches: ["main"] }, pull_request: null, workflow_call: null });
     assert.deepEqual(workflow.permissions, { contents: "read" });
-    assert.deepEqual(workflow.jobs[id].strategy.matrix.os, ["ubuntu-24.04", "ubuntu-24.04-arm"]);
+    assert.deepEqual(workflow.jobs[id].strategy.matrix.os, workflow === ci
+      ? ["ubuntu-24.04", "ubuntu-24.04-arm"]
+      : ["ubuntu-24.04", "ubuntu-24.04-arm", "macos-15", "macos-15-intel"]);
     assert.equal(workflow.jobs[id].strategy["fail-fast"], false);
     assert.equal(workflow.jobs[id]["runs-on"], "${{ matrix.os }}");
   }
@@ -110,6 +116,7 @@ export function checkRepository(root) {
   assert.equal(invocations[1].id, "failing");
   assert.equal(invocations[1]["continue-on-error"], true);
   assert.equal(invocations[1].env.FIXTURE_RESULT, "1");
+  assert.equal(invocations[1].with["checks-only"], "true");
   const verification = e2e.jobs.test.steps.at(-1);
   assert.equal(verification.if, "always()");
   assert.equal(verification.run, "python3 scripts/check-action-e2e.py");

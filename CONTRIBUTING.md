@@ -50,10 +50,11 @@ validation, execution-point argument handling, exit-code propagation and
 install-only behavior using offline archives and the Action execution command.
 Other Python tests cover repository contracts and release readiness guards.
 Node tests cover release policy and publication in isolated Git repositories.
-These checks run at `pre-push` and `check`; CI runs them on x64 and ARM64.
+These checks run at `pre-push` and `check`; CI runs them on Linux x64 and ARM64.
 The independent Action E2E workflow runs the actual composite Action through
-`uses: ./` on both architectures, with repeated invocations, independent Job
-Summaries and an expected failed governance execution. CI has one matrix job,
+`uses: ./` on Linux x64/ARM64 and macOS ARM64/Intel, with repeated invocations,
+independent Job Summaries and an expected failed checks-only governance execution.
+CI has one matrix job,
 `check` / `Check (RUNNER)`; Action E2E has one matrix job, `test` / `Test`. Both workflows
 run on pushes to main, pull requests and reusable workflow calls. Neither waits
 for the other during normal development.

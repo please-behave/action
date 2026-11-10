@@ -8,6 +8,10 @@ inputs:
     description: Execution point to run in the consuming repository
     required: false
     default: check
+  checks-only:
+    description: Run deterministic checks without reviews (true or false)
+    required: false
+    default: 'false'
   run:
     description: Execute Please Behave after installation (true or false)
     required: false
@@ -25,6 +29,7 @@ runs:
         PLEASE_VERSION: ${{ inputs.version }}
         PLEASE_RUN: ${{ inputs.run }}
         PLEASE_SUMMARY: ${{ inputs.summary }}
+        PLEASE_CHECKS_ONLY: ${{ inputs.checks-only }}
         ACTION_DIRECTORY: ${{ github.action_path }}
       run: bash "$ACTION_DIRECTORY/scripts/install.sh"
     - name: Run Please Behave
@@ -33,5 +38,6 @@ runs:
       env:
         PLEASE_EXECUTION_POINT_INPUT: ${{ inputs.execution-point }}
         PLEASE_SUMMARY: ${{ inputs.summary }}
+        PLEASE_CHECKS_ONLY: ${{ inputs.checks-only }}
         ACTION_DIRECTORY: ${{ github.action_path }}
       run: bash "$ACTION_DIRECTORY/scripts/run.sh"

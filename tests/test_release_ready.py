@@ -16,7 +16,9 @@ class ReleaseReadyTests(unittest.TestCase):
         self.release = dict(tag_name="v0.1.0", draft=False, prerelease=False, assets=[
             dict(name=name, state="uploaded", size=1) for name in (
                 "SHA256SUMS", "please-v0.1.0-x86_64-unknown-linux-gnu.tar.gz",
-                "please-v0.1.0-aarch64-unknown-linux-gnu.tar.gz")])
+                "please-v0.1.0-aarch64-unknown-linux-gnu.tar.gz",
+                "please-v0.1.0-x86_64-apple-darwin.tar.gz",
+                "please-v0.1.0-aarch64-apple-darwin.tar.gz")])
 
     def verify(self, **changes):
         args = dict(head="tested", expected="tested", remote="tested", release=self.release,
@@ -37,7 +39,7 @@ class ReleaseReadyTests(unittest.TestCase):
                 self.verify(release=dict(self.release, **change))
 
     def test_missing_or_incomplete_assets(self):
-        for index in range(3):
+        for index in range(len(self.release["assets"])):
             for field, value in (("state", "new"), ("size", 0), ("name", "unexpected")):
                 release = copy.deepcopy(self.release)
                 release["assets"][index][field] = value

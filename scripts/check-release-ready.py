@@ -17,9 +17,11 @@ def verify(head, expected, remote, release, version):
         raise ValueError(f"The public stable CLI {version} release is required.")
     assets = {a["name"] for a in release["assets"] if a["state"] == "uploaded" and a["size"] > 0}
     required = {"SHA256SUMS", f"please-{version}-x86_64-unknown-linux-gnu.tar.gz",
-                f"please-{version}-aarch64-unknown-linux-gnu.tar.gz"}
+                f"please-{version}-aarch64-unknown-linux-gnu.tar.gz",
+                f"please-{version}-x86_64-apple-darwin.tar.gz",
+                f"please-{version}-aarch64-apple-darwin.tar.gz"}
     if not required <= assets:
-        raise ValueError(f"CLI {version} is missing required Linux release assets.")
+        raise ValueError(f"CLI {version} is missing required Linux/macOS release assets.")
 
 
 def main():

@@ -69,6 +69,30 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("Incomplete &#60;snapshot&#62;", text)
         self.assertEqual((self.root / "invocations").read_text().splitlines(), ["run", "--at", "check"])
 
+    def test_checks_only_preserves_arguments_exit_and_summary(self):
+        self.report["plan"]["at"] = "release-candidate"
+        self.save()
+        for enabled in ("true", "false"):
+            for code in (0, 1, 2):
+                with self.subTest(summary=enabled, code=code):
+                    (self.root / "invocations").unlink(missing_ok=True)
+                    self.output.unlink(missing_ok=True)
+                    result = self.run_action(code, PLEASE_CHECKS_ONLY="true", PLEASE_SUMMARY=enabled,
+                                             PLEASE_EXECUTION_POINT_INPUT="release-candidate")
+                    self.assertEqual(result.returncode, code, result.stderr)
+                    self.assertEqual((self.root / "invocations").read_text().splitlines(),
+                                     ["run", "--at", "release-candidate", "--checks-only"])
+                    self.assertEqual(self.output.exists(), enabled == "true")
+                    if enabled == "true":
+                        self.assertIn("Please Behave — release&#45;candidate", self.output.read_text())
+                        self.assertIn("Description 0", self.output.read_text())
+
+    def test_invalid_checks_only_does_not_execute_or_summarize(self):
+        result = self.run_action(PLEASE_CHECKS_ONLY="yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.root / "invocations").exists())
+        self.assertFalse(self.output.exists())
+
     def test_success_and_advisory_failure_use_cli_aggregate(self):
         self.report["plan"]["scheduled"] = self.report["plan"]["scheduled"][:2]
         self.report["results"] = self.report["results"][-2:]

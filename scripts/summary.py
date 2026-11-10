@@ -142,9 +142,12 @@ def main():
     except (OSError, ValueError) as error:
         diagnostic = f"Report isolation failed: {error}. Current results cannot be identified safely."
         warning(diagnostic)
+    command = ["please", "run", "--at", point]
+    if os.environ.get("PLEASE_CHECKS_ONLY", "false") == "true":
+        command.append("--checks-only")
     start = time.monotonic()
     try:
-        code = subprocess.run(["please", "run", "--at", point], check=False).returncode
+        code = subprocess.run(command, check=False).returncode
         if code < 0:
             code = 128 - code
     except OSError as error:

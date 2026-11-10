@@ -7,7 +7,8 @@ per-invocation GitHub Job Summaries.
 
 ## Usage
 
-The examples use Action `v1.1.0`, which includes Job Summaries, with CLI `v0.5.0`.
+The basic examples use published Action `v1.1.0` with CLI `v0.5.0`.
+macOS and `checks-only` support are unavailable in Action `v1.1.1` and earlier.
 Use CLI `v0.1.0` or a compatible later stable release. The Action ref and CLI
 version are independent.
 
@@ -37,6 +38,7 @@ and credentials required by its rules before running the Action.
 | --- | --- | --- | --- |
 | `version` | Yes | None | Exact stable CLI release tag: `vMAJOR.MINOR.PATCH`. No `latest`, ranges or prereleases. |
 | `execution-point` | No | `check` | Point passed as one argument to `please run --at`. |
+| `checks-only` | No | `'false'` | `'true'` adds `--checks-only`, omitting reviews while retaining Job Summaries. Only exact true/false values are accepted. |
 | `run` | No | `'true'` | `'true'` executes after installation; `'false'` installs only. Other values fail. |
 | `summary` | No | `'true'` | `'true'` appends a Job Summary for this execution; `'false'` bypasses summary processing. Only these exact values are accepted. |
 
@@ -46,10 +48,11 @@ PATH to subsequent steps in the same job, including with `run: 'false'`.
 ## Installation and execution
 
 Supported runners are GitHub-hosted Ubuntu 24.04 x64 (`ubuntu-24.04`) and ARM64
-(`ubuntu-24.04-arm`). The installer maps these to `x86_64-unknown-linux-gnu` and
-`aarch64-unknown-linux-gnu`, respectively. Other OS or architecture values fail.
-It relies on the hosted runner's Bash, curl, awk, sha256sum, tar and install tools,
-plus Python 3 when summaries are enabled. No additional packages or permissions
+(`ubuntu-24.04-arm`), and macOS ARM64 (`macos-15`) and Intel (`macos-15-intel`).
+The installer selects the matching `x86_64` or `aarch64` archive for
+`unknown-linux-gnu` or `apple-darwin`. Other OS or architecture values fail.
+It relies on the hosted runner's Bash, curl, awk, tar and install tools,
+sha256sum on Linux or shasum on macOS, and Python 3 when summaries are enabled. No additional packages or permissions
 are required for summaries.
 
 Each invocation downloads `please-<tag>-<target>.tar.gz` and `SHA256SUMS` from
@@ -67,11 +70,17 @@ only rules assigned to `check`, not every configured check. Installation never e
 rules. The Action does not initialize configuration, install rule dependencies,
 provision provider credentials or explicitly synchronize external rule sources.
 For imports requiring synchronization, install with `run: 'false'`, run
-`please sync --yes`, then invoke `please run --at check` in later steps.
+`please sync --yes`, then invoke the Action again with `execution-point: check`
+and `summary: 'true'`.
 Normal CLI behavior applies, including hook reconciliation at Git-backed points.
 
-For an alternate checkout path, use install-only mode and invoke the CLI from
-that repository's root explicitly:
+Use `checks-only: 'true'` for deterministic release gates and other points that
+should omit reviews. Each execution still produces its own summary by default.
+Prepare any required services before invoking the Action. For example, headless
+GUI checks can start Xvfb in a preceding step and set `DISPLAY` on the Action step; the Action continues to own CLI execution and summary generation.
+
+For an alternate checkout path, install-only mode makes the CLI available for
+manual execution. Direct CLI execution does not produce an Action Job Summary:
 
 ```yaml
 steps:
