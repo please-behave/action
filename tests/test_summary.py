@@ -103,10 +103,10 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("FAIL (non-blocking)", self.output.read_text())
 
     def test_external_id_is_hidden_and_unnamed_rules_use_short_id(self):
-        identity = "git:" + "a" * 64 + ":multi-point/security:1:secret-scan"
+        identity = "git:" + "a" * 64 + ":rulesets/multi-point/security:1:secret-scan"
         self.report["plan"]["scheduled"][0].update(id=identity, name="Secret scan")
         self.report["results"][-1]["id"] = identity
-        unnamed = "git:" + "b" * 64 + ":multi-point/security:1:sensitive-files"
+        unnamed = "git:" + "b" * 64 + ":rulesets/multi-point/security:1:sensitive-files"
         self.report["plan"]["scheduled"][1].update(id=unnamed, name=None)
         self.report["results"][-2]["id"] = unnamed
         self.save()

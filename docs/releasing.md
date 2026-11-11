@@ -9,7 +9,7 @@ candidate or publication work.
 Plan uses a Semantic Release dry run to determine the next version and source SHA
 without creating tags, commits or releases. Readiness uses the published governor
 pinned in `.please-version` at `release-readiness --checks-only`. The pinned
-external `release/releasable-project` ruleset verifies successful push CI for that exact
+external `rulesets/multi-point/releasable-open-source-software` ruleset verifies successful push CI for that exact
 commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
 `Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security,
 license and npm audit results are reused from CI without an age limit.

@@ -31,7 +31,7 @@ Coding agents use the Git hooks for validation. Inspect failures with
 `please status --details`, fix the cause and retry the Git operation.
 Keep new repository checks in `.please/` and reuse the configured external rules.
 
-The imported `conventional-commits` ruleset is the authoritative message validator.
+The imported `rulesets/commit-msg/repository-conventions` ruleset is the authoritative message validator.
 Scopes are optional and configured in `.please/commit-scopes.txt`: action, ci,
 deps, docs, git, release and tests. There is no additional local message policy.
 The shared advisory Review evaluates only the header for specific English
@@ -84,10 +84,11 @@ pre-push. Clean CI checkouts provide the release gate. Security scans cover a
 snapshot, not all historical commits or every pushed ref.
 
 Release plans the next version, then runs Readiness and the E2E Candidate in
-parallel. Readiness uses the pinned external `release/readiness` ruleset to verify
-both explicitly named CI matrix entries for the dispatched commit, plus source
-security/license. Local rules check current npm advisories and the public CLI
-assets. It reuses existing push CI rather than rerunning general checks. Plan and
+parallel. Readiness uses the pinned external
+`rulesets/multi-point/releasable-open-source-software` ruleset to verify both
+explicitly named CI matrix entries for the dispatched commit, reusing source
+security, license and npm audit results. Local rules check the public CLI assets.
+It reuses existing push CI rather than rerunning general checks. Plan and
 Publish run no Please Behave or hooks. Publication refuses a changed planned
 version or source revision before tagging. See the release contract for CI reruns
 and readiness prerequisites.
