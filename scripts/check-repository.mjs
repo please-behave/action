@@ -156,7 +156,7 @@ export function checkRepository(root) {
     }
   }
   const quality = ci.jobs.check.steps.find(step => step.name === "Run quality gates");
-  const installation = ci.jobs.check.steps.find(step => step.name === "Install released governor");
+  const installation = ci.jobs.check.steps.find(step => step.name === "Install published governor");
   assert.match(quality.uses, /^please-behave\/action@[a-f0-9]{40}$/);
   assert.equal(quality.uses, installation.uses, "Installation and execution use the same published Action");
   assert.equal(readinessExecution.uses, quality.uses);

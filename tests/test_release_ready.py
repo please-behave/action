@@ -21,17 +21,11 @@ class ReleaseReadyTests(unittest.TestCase):
                 "please-v0.1.0-aarch64-apple-darwin.tar.gz")])
 
     def verify(self, **changes):
-        args = dict(head="tested", expected="tested", remote="tested", release=self.release,
-                    version="v0.1.0")
+        args = dict(release=self.release, version="v0.1.0")
         readiness.verify(**dict(args, **changes))
 
     def test_ready_revision(self):
         self.verify()
-
-    def test_moved_or_untested_revision(self):
-        for key in ("head", "expected", "remote"):
-            with self.subTest(key=key), self.assertRaises(ValueError):
-                self.verify(**{key: "other"})
 
     def test_release_must_be_public_stable_and_exact(self):
         for change in ({"draft": True}, {"prerelease": True}, {"tag_name": "v9.9.9"}):
@@ -46,15 +40,12 @@ class ReleaseReadyTests(unittest.TestCase):
                 with self.subTest(index=index, field=field), self.assertRaises(ValueError):
                     self.verify(release=release)
 
-    def test_main_queries_only_revision_and_cli_release(self):
+    def test_main_queries_only_the_public_cli_release(self):
         with patch.object(readiness.Path, "read_text", return_value="v0.1.0\n"), \
-                patch.object(readiness.subprocess, "check_output", return_value="tested\n"), \
-                patch.dict(readiness.os.environ, {"GITHUB_SHA": "tested"}), \
                 patch.object(readiness, "gh", side_effect=[
-                    {"object": {"sha": "tested"}}, self.release]) as gh, \
+                    self.release]) as gh, \
                 patch("builtins.print") as output:
             readiness.main()
         self.assertEqual(gh.call_args_list, [
-            call("api", "repos/please-behave/action/git/ref/heads/main"),
             call("api", "repos/please-behave/cli/releases/tags/v0.1.0")])
-        output.assert_called_once_with("Tested main and public CLI release assets confirmed.")
+        output.assert_called_once_with("Public stable CLI release assets confirmed.")

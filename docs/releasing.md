@@ -162,3 +162,9 @@ runtime scripts. Publish uses the same published governor at `release-verify` to
 require all four current-run/current-attempt manifests and matching source hashes.
 The internal manifests follow `.please/release-artifacts.json`; no native or public
 release asset is added. Plan installs no governor; Publish installs no build tools.
+
+Before tagging, thin local Semantic Release adapters load the cached external
+publication guard exported by `release-verify`. The shared implementation checks
+the recalculated version, checkout, dispatched SHA, repository, main branch and
+current remote main. Custom prerelease/image publication reuses that source guard.
+Offline lifecycle fixtures exercise the actual pinned external module from cache.

@@ -27,7 +27,7 @@ target = "LICENSE"
 [[imports]]
 git = "https://github.com/christianpflugradt/please-behave-rulesets.git"
 path = "release/releasable-project"
-ref = "1279facc9a4019e7f937196fb2e8b1826c67bb08"
+ref = "cfb862fdc0f2594f615dffbba16840f4d84758f3"
 
 [imports.rule_parameters.release-contract]
 ci_policy = ".please/release-ci.json"
