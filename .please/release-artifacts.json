@@ -8,25 +8,29 @@
       "action.yml",
       "scripts/install.sh",
       "scripts/run.sh",
-      "scripts/summary.py"
+      "scripts/summary.py",
+      "scripts/change-base.py"
     ],
     "ubuntu-24.04-arm": [
       "action.yml",
       "scripts/install.sh",
       "scripts/run.sh",
-      "scripts/summary.py"
+      "scripts/summary.py",
+      "scripts/change-base.py"
     ],
     "macos-15": [
       "action.yml",
       "scripts/install.sh",
       "scripts/run.sh",
-      "scripts/summary.py"
+      "scripts/summary.py",
+      "scripts/change-base.py"
     ],
     "macos-15-intel": [
       "action.yml",
       "scripts/install.sh",
       "scripts/run.sh",
-      "scripts/summary.py"
+      "scripts/summary.py",
+      "scripts/change-base.py"
     ]
   }
 }

@@ -75,7 +75,7 @@ export function checkRepository(root) {
   assert.match(release.jobs.publish.if, /needs.release-readiness.result == 'success'/);
   assert.match(release.jobs.publish.if, /needs.release-candidate.result == 'success'/);
   assert.equal(release.jobs.publish["runs-on"], "ubuntu-24.04");
-  for (const id of ["plan"]) {
+  for (const id of ["plan", "publish"]) {
     const steps = release.jobs[id].steps;
     for (const step of steps) {
       assert.notEqual(step.uses, "./", "Plan and Publish must not install the governor");
@@ -120,7 +120,7 @@ export function checkRepository(root) {
     "Regular checks must run through Please Behave");
   assert.ok(ci.jobs.check.steps.every(step => step.uses !== "./"), "Real Action tests belong in Release Candidate");
   assert.deepEqual(candidate.steps.filter(step => step.run).map(step => step.name),
-    ["Read pinned governor version", "Prepare isolated summary acceptance fixture", "Verify Action outcomes and independent summaries", "Restore project governance"]);
+    ["Read pinned governor version", "Prepare isolated summary acceptance fixture", "Verify Action outcomes and independent summaries", "Restore project governance", "Record release candidate evidence"]);
   assert.deepEqual(release.permissions, { contents: "read" });
   assert.deepEqual(release.jobs.publish.permissions, { contents: "write" });
   assert.deepEqual(release.jobs.plan.permissions, { contents: "write" });
@@ -180,16 +180,15 @@ export function checkRepository(root) {
   assert.ok(ci.jobs.check.steps.indexOf(installation) < synchronization);
   assert.ok(synchronization < ci.jobs.check.steps.indexOf(quality));
 
-  const record = candidate.steps.find(step => step.with?.["execution-point"] === "release-record");
+  const record = candidate.steps.find(step => step.run === "python3 scripts/release-evidence.py record");
   assert.ok(record && candidate.steps.indexOf(record) > candidate.steps.indexOf(verification));
   assert.equal(record.env.RELEASE_TARGET, "${{ matrix.os }}");
   const evidence = candidate.steps.find(step => step.name === "Upload release candidate evidence");
   assert.match(evidence.with.name, /github.run_attempt/);
   assert.equal(evidence.with["if-no-files-found"], "error");
-  const verify = release.jobs.publish.steps.find(step => step.with?.["execution-point"] === "release-verify");
+  const verify = release.jobs.publish.steps.find(step => step.run === "python3 scripts/release-evidence.py verify");
   assert.ok(verify && release.jobs.publish.steps.indexOf(verify) < release.jobs.publish.steps.indexOf(publication));
-  assert.equal(verify.with["checks-only"], "true");
-  assert.equal(verify.with.summary, "true");
+  assert.equal(verify.env.EXPECTED_RELEASE_VERSION, "${{ needs.plan.outputs.version }}");
 
   for (const file of ["README.md", "CONTRIBUTING.md", "docs/releasing.md"]) {
     for (const match of text(file).matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {

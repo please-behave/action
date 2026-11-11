@@ -156,18 +156,19 @@ unavailable.
 
 ## Common candidate evidence
 
-Each successful hosted candidate restores project governance and uses the external
-`release-contract` Check at `release-record` to hash the tested Action metadata and
-runtime scripts. Publish uses the same published governor at `release-verify` to
-require all four current-run/current-attempt manifests and matching source hashes.
-The internal manifests follow `.please/release-artifacts.json`; no native or public
-release asset is added. Plan installs no governor; Publish installs no build tools.
+Each successful hosted candidate restores project governance and runs
+`scripts/release-evidence.py record` to hash the tested Action metadata and all
+runtime scripts, including comparison-base handling. Publish runs the same script
+with `verify` to require all four current-run/current-attempt manifests and matching
+source hashes. The internal manifests follow `.please/release-artifacts.json`;
+no native or public release asset is added.
 
-Before tagging, thin local Semantic Release adapters load the cached external
-publication guard exported by `release-verify`. The shared implementation checks
-the recalculated version, checkout, dispatched SHA, repository, main branch and
-current remote main. Custom prerelease/image publication reuses that source guard.
-Offline lifecycle fixtures exercise the actual pinned external module from cache.
+Plan and Publish never install or invoke Please Behave, synchronize governance,
+or install Git hooks. Evidence verification is release tooling, outside governance.
+Before tagging, the local `scripts/semantic-release-plugin.mjs` checks the
+recalculated version, checkout, dispatched SHA, repository, main branch and
+current remote main. Offline lifecycle fixtures exercise that local guard
+without requiring a cached external module.
 
 ## Published governor updates
 

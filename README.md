@@ -249,10 +249,10 @@ supported architectures in its `Check` matrix job. Release reuses successful pus
 CI for the exact source and runs hosted Action tests as its four-platform Candidate
 matrix. Hosted tests run only during release preparation. Readiness reuses source
 security, license and npm audit results from CI and verifies the public CLI assets.
-The separate external `rulesets/multi-point/releasable-open-source-software` ruleset records common internal
-candidate evidence and verifies all four source/version/run/attempt manifests before
-publication. Publish checks the planned version and source again before tagging;
-it installs the published governor for evidence verification and never rebuilds.
+Workflow tooling records candidate evidence and verifies all four
+source/version/run/attempt manifests before publication. Publish checks the
+planned version and source again before tagging. It never installs or invokes
+Please Behave, synchronizes governance, or installs Git hooks.
 
 Commit messages are checked only by the managed local Git hook;
 CI does not validate commit history or PR titles. See

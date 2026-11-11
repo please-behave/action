@@ -67,6 +67,8 @@ class RepositoryTests(unittest.TestCase):
                  (".github/workflows/release.yml", "        if: always()", "        if: success()"),
                  
                  (".github/workflows/release.yml", "  contents: read", "  contents: write"),
+                 (".github/workflows/release.yml", "      - name: Publish semantic Action release",
+                  "      - run: please sync --yes\n      - name: Publish semantic Action release"),
                  ("README.md", "](LICENSE)", "](MISSING)")]
         for name, before, after in cases:
             with self.subTest(name=name):

@@ -92,7 +92,9 @@ parallel. Readiness uses the pinned external
 explicitly named CI matrix entries for the dispatched commit, reusing source
 security, license and npm audit results. Local rules check the public CLI assets.
 It reuses existing push CI rather than rerunning general checks. Plan and
-Publish run no Please Behave or hooks. Publication refuses a changed planned
+Publish run no Please Behave or hooks. Candidate evidence is recorded and verified
+by `scripts/release-evidence.py`; the local Semantic Release plugin checks source
+and version without installing governance. Publication refuses a changed planned
 version or source revision before tagging. See the release contract for CI reruns
 and readiness prerequisites.
 

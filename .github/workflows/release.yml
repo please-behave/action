@@ -173,14 +173,8 @@ jobs:
         run: |
           rm -rf .please
           mv "$RUNNER_TEMP/original-please" .please
-          please sync --yes
       - name: Record release candidate evidence
-        uses: please-behave/action@722d5967c094e5ac4bfe25e9f82b020ff34e9487 # v1.2.0
-        with:
-          version: ${{ steps.governor.outputs.version }}
-          execution-point: release-record
-          checks-only: 'true'
-          summary: 'true'
+        run: python3 scripts/release-evidence.py record
         env:
           EXPECTED_RELEASE_VERSION: ${{ needs.plan.outputs.version }}
           RELEASE_TARGET: ${{ matrix.os }}
@@ -217,16 +211,6 @@ jobs:
           node-version: '26'
           package-manager-cache: false
       - run: npm ci --ignore-scripts
-      - name: Read pinned governor version
-        id: governor
-        run: echo "version=$(python3 -c 'import pathlib, tomllib; print("v" + tomllib.loads(pathlib.Path("mise.toml").read_text())["tools"]["github:please-behave/cli"])')" >> "$GITHUB_OUTPUT"
-      - name: Install published governor
-        uses: please-behave/action@722d5967c094e5ac4bfe25e9f82b020ff34e9487 # v1.2.0
-        with:
-          version: ${{ steps.governor.outputs.version }}
-          run: 'false'
-      - name: Synchronize governance
-        run: please sync --yes
       - name: Download release candidate evidence
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
@@ -234,12 +218,7 @@ jobs:
           path: release-evidence
           merge-multiple: true
       - name: Verify complete release candidate evidence
-        uses: please-behave/action@722d5967c094e5ac4bfe25e9f82b020ff34e9487 # v1.2.0
-        with:
-          version: ${{ steps.governor.outputs.version }}
-          execution-point: release-verify
-          checks-only: 'true'
-          summary: 'true'
+        run: python3 scripts/release-evidence.py verify
         env:
           EXPECTED_RELEASE_VERSION: ${{ needs.plan.outputs.version }}
       - name: Publish semantic Action release
