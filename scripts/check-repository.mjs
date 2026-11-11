@@ -90,14 +90,14 @@ export function checkRepository(root) {
   const readiness = release.jobs["release-readiness"];
   assert.deepEqual(readiness.permissions, { contents: "read", actions: "read" });
   assert.equal(readiness.steps[0].with.ref, "${{ needs.plan.outputs.source_sha }}");
-  const readinessExecution = readiness.steps.find(step => step.with?.["execution-point"] === "release-readiness");
+  const readinessExecution = readiness.steps.find(step => step.with?.["execution-point"] === "release");
   assert.ok(readinessExecution, "Readiness executes through the published Action");
   assert.deepEqual(readinessExecution.with, {
-    version: "${{ steps.governor.outputs.version }}", "execution-point": "release-readiness",
+    install: "false", sync: "true", "execution-point": "release",
     "checks-only": "true", summary: "true",
   });
   assert.ok(readiness.steps.every(step => !/\bplease run\b/.test(step.run ?? "")));
-  const policy = JSON.parse(text(".please/release-ci.json"));
+  const policy = JSON.parse(text(".github/release-ci.json"));
   assert.deepEqual(policy, {
     schema_version: 1, repository: "please-behave/action", workflow: ".github/workflows/ci.yml",
     event: "push", branch: "main", required_jobs: ["Check (ubuntu-24.04)", "Check (ubuntu-24.04-arm)"],
@@ -116,18 +116,19 @@ export function checkRepository(root) {
     assert.equal(workflow.jobs[id]["runs-on"], "${{ matrix.os }}");
   }
   assert.deepEqual(ci.jobs.check.steps.filter(step => step.run).map(step => step.name),
-    ["Prepare validation dependencies", "Read pinned governor version", "Synchronize governance"],
+    ["Fetch locked dependencies"],
     "Regular checks must run through Please Behave");
   assert.ok(ci.jobs.check.steps.every(step => step.uses !== "./"), "Real Action tests belong in Release Candidate");
   assert.deepEqual(candidate.steps.filter(step => step.run).map(step => step.name),
-    ["Read pinned governor version", "Prepare isolated summary acceptance fixture", "Verify Action outcomes and independent summaries", "Restore project governance", "Record release candidate evidence"]);
+    ["Prepare isolated summary acceptance fixture", "Verify Action outcomes and independent summaries", "Restore project governance", "Record release candidate evidence"]);
   assert.deepEqual(release.permissions, { contents: "read" });
   assert.deepEqual(release.jobs.publish.permissions, { contents: "write" });
   assert.deepEqual(release.jobs.plan.permissions, { contents: "write" });
   const invocations = candidate.steps.filter(step => step.uses === "./");
   assert.deepEqual(invocations.map(step => step.with["execution-point"]), ["summary-first", "summary-second"]);
   const fixture = candidate.steps.find(step => step.name === "Prepare isolated summary acceptance fixture");
-  const customPoints = fixture.run.match(/\[execution_points\]\s+custom = (\[[^\n]+\])/);
+  assert.equal(fixture.run, "bash scripts/prepare-action-e2e.sh");
+  const customPoints = text("scripts/prepare-action-e2e.sh").match(/\[execution_points\]\s+custom = (\[[^\n]+\])/);
   assert.ok(customPoints, "Summary fixture must declare its custom execution points");
   assert.deepEqual(JSON.parse(customPoints[1]), invocations.map(step => step.with["execution-point"]),
     "Summary fixture declarations must match the Action invocations");
@@ -159,8 +160,14 @@ export function checkRepository(root) {
         }
         if (step.uses === "./" || step.uses?.startsWith("please-behave/action@")) {
           assert.ok(checkedOut, "Checkout must precede the governor Action");
-          if (step.with.install !== "false") {
-            assert.equal(step.with.version, "${{ steps.governor.outputs.version }}", "CLI pin must match mise.toml");
+          if (step.uses === "./" && step.with.install !== "false") {
+            assert.equal(step.with.version,
+              "v${{ fromJSON(steps.tools.outputs.versions)['github:please-behave/cli'][0].version }}",
+              "Installer acceptance tests use mise's resolved governor version");
+          } else {
+            assert.equal(step.with.install, "false");
+            assert.equal(step.with.sync, "true");
+            assert.equal(step.with.version, undefined, "Mise owns the governor version");
           }
         }
         if (step.uses && !step.uses.startsWith("./")) {
@@ -170,15 +177,19 @@ export function checkRepository(root) {
     }
   }
   const quality = ci.jobs.check.steps.find(step => step.name === "Run quality gates");
-  const installation = ci.jobs.check.steps.find(step => step.name === "Install published governor");
   assert.match(quality.uses, /^please-behave\/action@[a-f0-9]{40}$/);
-  assert.equal(quality.uses, installation.uses, "Installation and execution use the same published Action");
   assert.equal(readinessExecution.uses, quality.uses);
-  assert.deepEqual(quality.with, { version: "${{ steps.governor.outputs.version }}", "execution-point": "check", summary: "true" });
-  assert.equal(installation.with.run, "false");
-  const synchronization = ci.jobs.check.steps.findIndex(step => step.run === "please sync --yes");
-  assert.ok(ci.jobs.check.steps.indexOf(installation) < synchronization);
-  assert.ok(synchronization < ci.jobs.check.steps.indexOf(quality));
+  assert.deepEqual(quality.with, { install: "false", sync: "true", "execution-point": "check", summary: "true" });
+  assert.equal(ci.jobs.check.steps.filter(step => step.uses?.startsWith("please-behave/action@")).length, 1);
+  assert.equal(ci.env.MISE_AUTO_INSTALL, "false");
+  assert.equal(release.env.MISE_AUTO_INSTALL, "false");
+  assert.match(text(".please/config.toml"), /custom = \["release"\]/);
+  assert.ok(readiness.steps.some(step => step.run === "python3 scripts/check-release-ci.py"));
+  for (const [job, tools] of [[release.jobs.plan, "node"], [release.jobs.publish, "python node"]]) {
+    const installer = job.steps.find(step => step.uses?.startsWith("jdx/mise-action@"));
+    assert.ok(installer, "Tool installation uses mise");
+    assert.equal(installer.with.install_args, tools, "Plan and Publish install only runtime tools");
+  }
 
   const record = candidate.steps.find(step => step.run === "python3 scripts/release-evidence.py record");
   assert.ok(record && candidate.steps.indexOf(record) > candidate.steps.indexOf(verification));

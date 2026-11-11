@@ -10,6 +10,9 @@ concurrency:
   group: release-main
   cancel-in-progress: false
 
+env:
+  MISE_AUTO_INSTALL: 'false' # Keep jobs limited to their explicit tool subsets.
+
 jobs:
   plan:
     name: Plan
@@ -28,10 +31,10 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+      - name: Install project tools
+        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          node-version: '26'
-          package-manager-cache: false
+          install_args: node
       - run: npm ci --ignore-scripts
       - name: Plan next semantic release without publishing
         id: plan
@@ -54,34 +57,24 @@ jobs:
           ref: ${{ needs.plan.outputs.source_sha }}
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+      - name: Install project tools
+        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          python-version: '3.15'
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with:
-          node-version: '26'
-          package-manager-cache: false
-      - name: Read pinned governor version
-        id: governor
-        run: echo "version=$(python3 -c 'import pathlib, tomllib; print("v" + tomllib.loads(pathlib.Path("mise.toml").read_text())["tools"]["github:please-behave/cli"])')" >> "$GITHUB_OUTPUT"
-      - name: Install published governor
-        uses: please-behave/action@722d5967c094e5ac4bfe25e9f82b020ff34e9487 # v1.2.0
-        with:
-          version: ${{ steps.governor.outputs.version }}
-          run: 'false'
-      - name: Synchronize governance
-        run: please sync --yes
-      - name: Verify release readiness
+          install_args: python github:please-behave/cli
+      - name: Verify exact-source CI prerequisites
+        run: python3 scripts/check-release-ci.py
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          GH_TOKEN: ${{ github.token }}
-          COMMIT_HEAD: ${{ needs.plan.outputs.source_sha }}
-        uses: please-behave/action@722d5967c094e5ac4bfe25e9f82b020ff34e9487 # v1.2.0
+      - name: Verify release dependency
+        uses: please-behave/action@196e1d61f898e0cb77c58ab3dd6667f021321d5e # v1.3.0
         with:
-          version: ${{ steps.governor.outputs.version }}
-          execution-point: release-readiness
+          install: 'false'
+          sync: 'true'
+          execution-point: release
           checks-only: 'true'
           summary: 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Upload readiness report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -107,47 +100,18 @@ jobs:
         with:
           ref: ${{ needs.plan.outputs.source_sha }}
           persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+      - name: Install project tools
+        id: tools
+        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          python-version: '3.15'
-      - name: Read pinned governor version
-        id: governor
-        run: echo "version=$(python3 -c 'import pathlib, tomllib; print("v" + tomllib.loads(pathlib.Path("mise.toml").read_text())["tools"]["github:please-behave/cli"])')" >> "$GITHUB_OUTPUT"
+          install_args: python github:please-behave/cli
       - name: Prepare isolated summary acceptance fixture
-        run: |
-          echo "REAL_PYTHON=$(command -v python3)" >> "$GITHUB_ENV"
-          mv .please "$RUNNER_TEMP/original-please"
-          mkdir -p .please/checks/fixture "$RUNNER_TEMP/summary-tools"
-          cat > .please/config.toml <<'EOF'
-          project = "Summary acceptance"
-          [execution_points]
-          custom = ["summary-first", "summary-second"]
-          EOF
-          cat > .please/checks/fixture/rule.toml <<'EOF'
-          id = "fixture"
-          description = "Hosted composite summary acceptance"
-          run_at = ["summary-first", "summary-second"]
-          blocking = true
-          [check]
-          command = "bash -c 'exit ${FIXTURE_RESULT:-0}'"
-          EOF
-          # Preserve a copy of the actual composite step summary before runner upload.
-          cat > "$RUNNER_TEMP/summary-tools/python3" <<'EOF'
-          #!/usr/bin/env bash
-          "$REAL_PYTHON" "$@"
-          result=$?
-          if [[ "$1" == */scripts/summary.py ]]; then
-            cp "$GITHUB_STEP_SUMMARY" "$RUNNER_TEMP/$PLEASE_EXECUTION_POINT_INPUT.md"
-          fi
-          exit "$result"
-          EOF
-          chmod +x "$RUNNER_TEMP/summary-tools/python3"
-          echo "$RUNNER_TEMP/summary-tools" >> "$GITHUB_PATH"
+        run: bash scripts/prepare-action-e2e.sh
       - name: Invoke Action expecting success and a default summary
         id: passing
         uses: ./
         with:
-          version: ${{ steps.governor.outputs.version }}
+          version: v${{ fromJSON(steps.tools.outputs.versions)['github:please-behave/cli'][0].version }}
           execution-point: summary-first
       - name: Invoke Action expecting governance failure
         id: failing
@@ -203,13 +167,10 @@ jobs:
           ref: ${{ needs.plan.outputs.source_sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+      - name: Install project tools
+        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          python-version: '3.15'
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with:
-          node-version: '26'
-          package-manager-cache: false
+          install_args: python node
       - run: npm ci --ignore-scripts
       - name: Download release candidate evidence
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8

@@ -5,7 +5,7 @@ Run `mise trust` and `mise install` to prepare the exact Node, Python, ShellChec
 actionlint and Gitleaks versions in `mise.toml`. Bash and Git remain host prerequisites.
 Install the released Please Behave version pinned in `mise.toml`; never
 use a candidate CLI build as the governor. Prepare Node dependencies with
-`mise run setup`, then install managed Git hooks and synchronize the
+`mise run ci:prepare`, then install managed Git hooks and synchronize the
 pinned external rulesets with `mise exec -- sh scripts/setup-git-hooks.sh --yes`.
 Setup needs network access; pre-commit and pre-push use prepared dependencies offline.
 Use `mise exec -- please run --at pre-commit` or `mise exec -- please run --at pre-push`
@@ -23,7 +23,7 @@ Please Behave owns the repository's quality gates:
 | `commit-msg` | Imported Conventional Commits Check and advisory header wording Review |
 | `pre-push` | Offline Python and Node tests, workflow/shell/contract checks, imported security and license checks |
 | `check` | The same quality gates as `pre-push`, on the CI checkout |
-| `release-readiness` | Exact-commit CI proof, committed-source security/license, current npm audit and public CLI assets |
+| `release` | Public stable CLI dependency and all four native assets |
 
 Commit and push to run validation through the installed hooks. `npm test`
 delegates to `please run --at pre-push`; it does not define a second test suite.
@@ -38,7 +38,7 @@ The shared advisory Review evaluates only the header for specific English
 imperative wording, without the diff, body or repository files. Its
 `gemini-flash-lite` provider is independently imported from
 `providers/gemini-flash-lite` in the same external repository; no adapter is copied
-locally. All four Rule Sets and the provider share one immutable revision.
+locally. All three Rule Sets and the provider share one immutable revision.
 Export GEMINI_API_KEY in the shell running Git. Review FAIL and ERROR, including
 missing credentials, remain visible without blocking commits. The adapter allows
 three attempts with 1/3-second waits, 20 seconds per request and a 70-second
@@ -87,10 +87,10 @@ pre-push. Clean CI checkouts provide the release gate. Security scans cover a
 snapshot, not all historical commits or every pushed ref.
 
 Release plans the next version, then runs Readiness and the E2E Candidate in
-parallel. Readiness uses the pinned external
-`rulesets/multi-point/releasable-open-source-software` ruleset to verify both
-explicitly named CI matrix entries for the dispatched commit, reusing source
-security, license and npm audit results. Local rules check the public CLI assets.
+parallel. Readiness runs `scripts/check-release-ci.py` to verify both named CI
+matrix entries for the dispatched commit, reusing source security, license and
+npm audit results. The independent `cli-release` Check at `release` verifies the
+public CLI dependency assets through the published Action.
 It reuses existing push CI rather than rerunning general checks. Plan and
 Publish run no Please Behave or hooks. Candidate evidence is recorded and verified
 by `scripts/release-evidence.py`; the local Semantic Release plugin checks source
@@ -106,5 +106,5 @@ Contributions use the [PolyForm Noncommercial License 1.0.0](LICENSE).
 The exact published governor version is the `github:please-behave/cli` tool entry
 in `mise.toml`. `mise install` installs the released executable through the GitHub
 backend with checksum and available artifact-attestation verification. Run
-`mise exec -- please --version` to inspect it. CI reads this same entry for the
-published Action. Candidate binaries never become the governor.
+`mise exec -- please --version` to inspect it. CI installs tools through mise; the published Action reuses
+the governor with `install: 'false'` and `sync: 'true'`. Candidate binaries never become the governor.

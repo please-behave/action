@@ -7,16 +7,18 @@ uses the dispatched source revision. No release-worthy commits means no readines
 candidate or publication work.
 
 Plan uses a Semantic Release dry run to determine the next version and source SHA
-without creating tags, commits or releases. Readiness uses the published governor
-pinned in `mise.toml` at `release-readiness --checks-only`. The pinned
-external `rulesets/multi-point/releasable-open-source-software` ruleset verifies successful push CI for that exact
+without creating tags, commits or releases. Readiness runs
+`scripts/check-release-ci.py` directly to verify successful push CI for the exact
 commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
 `Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security,
-license and npm audit results are reused from CI without an age limit.
+license and npm audit results are reused from CI without an age limit. The
+published Action v1.3.0 then uses the mise-installed governor at `release` with
+`install: 'false'`, `sync: 'true'` and `checks-only: 'true'`.
+
 The local CLI dependency check requires the pinned public stable
 CLI release with all four native archives and SHA256SUMS. API failures block publication.
 
-Readiness does not restart or wait for CI. Its policy is `.please/release-ci.json`.
+Readiness does not restart or wait for CI. Its policy is `.github/release-ci.json`.
 The newest matching CI run must succeed; missing, running, failed or incomplete
 proof blocks. Partial reruns may retain successful jobs from earlier attempts of
 that same run; unrelated runs cannot combine. CI remains independent of Release.
@@ -84,15 +86,12 @@ Acceptance criteria:
 
 Install development dependencies with `npm ci --ignore-scripts` (Node 26), the
 released governor pinned in `mise.toml`, and the tools listed in
-[Contributing](../CONTRIBUTING.md). Install managed hooks and synchronize external
-rules with `sh scripts/setup-git-hooks.sh --yes`. CI installs the governor through
-the published Action pinned to the full commit SHA for `v1.2.0` after checkout,
-synchronizes imports and invokes the same published Action to run `check` with
-a Job Summary. Installation-only mode remains necessary before synchronization;
-the execution invocation installs the same CLI version again. Readiness installs
-the same pinned governor and prepares npm dependencies and Gitleaks before rule
-execution, then invokes the published Action with `checks-only` and summaries
-enabled. Plan and Publish prepare only Node dependencies and never install
+`mise.toml`. `mise run ci:prepare` fetches locked npm dependencies, and hook
+setup synchronizes imports explicitly. CI uses mise to install tools, then one
+published Action step to synchronize and execute `check` with summaries on both
+architectures. Release Readiness installs only Python and the governor, verifies
+exact-source CI directly, then invokes the published Action at `release` with
+`checks-only` and summaries enabled. Plan and Publish prepare only Node dependencies and never install
 Please Behave or Git hooks. Plan needs `contents: write` because Semantic Release
 verifies push access even during a dry run; Publish needs it to create release tags
 and the GitHub Release. Readiness needs `contents: read` and `actions: read`;
@@ -100,7 +99,7 @@ Candidate needs only `contents: read`.
 
 The managed `commit-msg` hook runs the imported syntax Check and advisory
 header-only wording Review through the independently imported Gemini provider.
-The published v0.5.0 governor supports both imports. CI does not validate
+The published v0.5.1 governor supports both imports. CI does not validate
 commit ranges or PR titles. Semantic Release still analyzes commits for version
 selection; that publication operation is separate from message validation.
 
@@ -142,8 +141,9 @@ required. A publication failure can leave a tag without a GitHub Release; inspec
 both remote states before retrying. Published immutable releases cannot be repaired
 by moving a tag or replacing assets; publish a new version when needed.
 
-Repository CI and Readiness use published Action v1.2.0 pinned to
-`722d5967c094e5ac4bfe25e9f82b020ff34e9487`, with summaries enabled.
+Repository CI and Readiness use published Action v1.3.0 pinned to
+`196e1d61f898e0cb77c58ab3dd6667f021321d5e`, with summaries enabled.
+Mise owns installation; the Action uses `install: 'false'` and `sync: 'true'`.
 The Action repository's own governance uses the published release; local Action
 invocations remain confined to acceptance tests.
 
@@ -160,7 +160,7 @@ Each successful hosted candidate restores project governance and runs
 `scripts/release-evidence.py record` to hash the tested Action metadata and all
 runtime scripts, including comparison-base handling. Publish runs the same script
 with `verify` to require all four current-run/current-attempt manifests and matching
-source hashes. The internal manifests follow `.please/release-artifacts.json`;
+source hashes. The internal manifests follow `.github/release-artifacts.json`;
 no native or public release asset is added.
 
 Plan and Publish never install or invoke Please Behave, synchronize governance,

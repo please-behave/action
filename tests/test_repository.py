@@ -19,7 +19,9 @@ class RepositoryTests(unittest.TestCase):
         for name in (".github", "docs"):
             shutil.copytree(ROOT / name, self.root / name)
         (self.root / ".please").mkdir()
-        shutil.copy2(ROOT / ".please/release-ci.json", self.root / ".please/release-ci.json")
+        shutil.copy2(ROOT / ".please/config.toml", self.root / ".please/config.toml")
+        (self.root / "scripts").mkdir()
+        shutil.copy2(ROOT / "scripts/prepare-action-e2e.sh", self.root / "scripts/prepare-action-e2e.sh")
 
     def check(self):
         return subprocess.run(["node", str(ROOT / "scripts/check-repository.mjs")],
@@ -41,16 +43,18 @@ class RepositoryTests(unittest.TestCase):
                  (".github/workflows/release.yml", "    needs: [plan, release-readiness, release-candidate]", "    needs: []"),
                  (".github/workflows/release.yml", "needs.release-candidate.result == 'success'",
                   "needs.release-candidate.result == 'skipped'"),
-                 (".please/release-ci.json", '"Check (ubuntu-24.04-arm)"', '"Check"'),
+                 (".github/release-ci.json", '"Check (ubuntu-24.04-arm)"', '"Check"'),
                  (".github/workflows/release.yml", "      - run: npm ci --ignore-scripts",
                   "      - uses: ./\n      - run: npm ci --ignore-scripts"),
                  (".github/workflows/ci.yml", "os: [ubuntu-24.04, ubuntu-24.04-arm]", "os: [ubuntu-24.04]"),
-                 (".github/workflows/release.yml", '[execution_points]', '[undeclared_points]'),
-                 (".github/workflows/release.yml", 'custom = ["summary-first", "summary-second"]',
+                 ("scripts/prepare-action-e2e.sh", '[execution_points]', '[undeclared_points]'),
+                 ("scripts/prepare-action-e2e.sh", 'custom = ["summary-first", "summary-second"]',
                   'custom = ["summary-first"]'),
                  (".github/workflows/ci.yml", "    name: Check", "    name: Tests"),
                  (".github/workflows/ci.yml", "  check:", "  tests:"),
                  (".github/workflows/ci.yml", "          execution-point: check", "          execution-point: pre-push"),
+                 (".github/workflows/release.yml", "          install_args: python node", "          install_args: python node github:please-behave/cli"),
+                 (".please/config.toml", 'custom = ["release"]', 'custom = ["release", "extra"]'),
                  (".github/workflows/release.yml", "          summary: 'true'", "          summary: 'false'"),
                  (".github/workflows/release.yml", "          checks-only: 'true'", "          checks-only: 'false'"),
                  (".github/workflows/ci.yml", "          summary: 'true'", "          summary: 'false'"),

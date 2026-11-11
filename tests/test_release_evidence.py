@@ -19,7 +19,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.head = "a" * 40
-        self.policy = evidence.policy_from(ROOT / ".please/release-artifacts.json")
+        self.policy = evidence.policy_from(ROOT / ".github/release-artifacts.json")
         self.env = dict(EXPECTED_RELEASE_VERSION="1.3.0", GITHUB_SHA=self.head,
                         GITHUB_REF="refs/heads/main", GITHUB_REPOSITORY="please-behave/action",
                         GITHUB_WORKFLOW_REF="please-behave/action/.github/workflows/release.yml@refs/heads/main",

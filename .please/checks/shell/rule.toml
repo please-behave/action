@@ -4,5 +4,5 @@ run_at = ["pre-commit", "pre-push", "check"]
 blocking = true
 
 [check]
-command = "shellcheck scripts/install.sh scripts/run.sh scripts/setup-git-hooks.sh"
+command = "shellcheck scripts/install.sh scripts/run.sh scripts/setup-git-hooks.sh scripts/prepare-action-e2e.sh"
 timeout_seconds = 60
