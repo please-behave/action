@@ -54,13 +54,16 @@ not guarantee the age of every transitive lockfile dependency.
 
 The `python-tests` check covers installation, checksum verification, input
 validation, execution-point argument handling, exit-code propagation and
-install-only behavior using offline archives and the Action execution command.
+install-only and preinstalled-CLI behavior using offline archives and the Action
+execution command. Comparison-base tests use local Git history without network
+services; generic summaries cover review findings and trigger omissions.
 Other Python tests cover repository contracts and release readiness guards.
 Node tests cover release policy and publication in isolated Git repositories.
 These checks run at `pre-push` and `check`; CI runs them on Linux x64 and ARM64.
 The independent Action E2E workflow runs the actual composite Action through
 `uses: ./` on Linux x64/ARM64 and macOS ARM64/Intel, with repeated invocations,
 independent Job Summaries and an expected failed checks-only governance execution.
+The second invocation reuses the installed CLI and synchronizes through the candidate Action.
 CI has one matrix job,
 `check` / `Check (RUNNER)`; Action E2E has one matrix job, `test` / `Test`. Both workflows
 run on pushes to main, pull requests and reusable workflow calls. Neither waits

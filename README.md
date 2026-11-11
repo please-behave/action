@@ -2,8 +2,8 @@
 
 A lightweight composite GitHub Action that installs and invokes the
 [Please Behave CLI](https://github.com/please-behave/cli). The CLI evaluates
-repository rules; this Action provides installation, optional execution and
-per-invocation GitHub Job Summaries.
+repository rules; this Action provides installation, optional synchronization,
+GitHub review context and per-invocation Job Summaries.
 
 ## Usage
 
@@ -36,11 +36,15 @@ and credentials required by its rules before running the Action.
 
 | Input | Required | Default | Meaning |
 | --- | --- | --- | --- |
-| `version` | Yes | None | Exact stable CLI release tag: `vMAJOR.MINOR.PATCH`. No `latest`, ranges or prereleases. |
+| `version` | No | None | Required when `install: 'true'`: exact stable CLI tag `vMAJOR.MINOR.PATCH`. No `latest`, ranges or prereleases. Ignored when installation is disabled. |
+| `install` | No | `'true'` | Download the selected CLI; `'false'` uses `please` already on PATH without downloading or checking its version. |
+| `sync` | No | `'false'` | `'true'` runs `please sync --yes` before execution, including when `run: 'false'`. |
 | `execution-point` | No | `check` | Point passed as one argument to `please run --at`. |
 | `checks-only` | No | `'false'` | `'true'` adds `--checks-only`, omitting reviews while retaining Job Summaries. Only exact true/false values are accepted. |
-| `run` | No | `'true'` | `'true'` executes after installation; `'false'` installs only. Other values fail. |
+| `run` | No | `'true'` | `'true'` executes after preparation; `'false'` skips execution. Other values fail. |
 | `summary` | No | `'true'` | `'true'` appends a Job Summary for this execution; `'false'` bypasses summary processing. Only these exact values are accepted. |
+
+Boolean inputs accept only the exact strings `true` and `false`.
 
 There are no Action outputs. The installed `please` executable is available on
 PATH to subsequent steps in the same job, including with `run: 'false'`.
@@ -52,7 +56,7 @@ Supported runners are GitHub-hosted Ubuntu 24.04 x64 (`ubuntu-24.04`) and ARM64
 The installer selects the matching `x86_64` or `aarch64` archive for
 `unknown-linux-gnu` or `apple-darwin`. Other OS or architecture values fail.
 It relies on the hosted runner's Bash, curl, awk, tar and install tools,
-sha256sum on Linux or shasum on macOS, and Python 3 when summaries are enabled. No additional packages or permissions
+sha256sum on Linux or shasum on macOS, and Python 3 for summaries and automatic review comparison bases. No additional packages or permissions
 are required for summaries.
 
 Each invocation downloads `please-<tag>-<target>.tar.gz` and `SHA256SUMS` from
@@ -67,17 +71,56 @@ By default, the next step invokes `please run --at <execution-point>` from
 be checked out at the workspace root. Job-level `defaults.run.working-directory`
 does not override composite Action execution. The default `check` point runs
 only rules assigned to `check`, not every configured check. Installation never executes
-rules. The Action does not initialize configuration, install rule dependencies,
-provision provider credentials or explicitly synchronize external rule sources.
-For imports requiring synchronization, install with `run: 'false'`, run
-`please sync --yes`, then invoke the Action again with `execution-point: check`
-and `summary: 'true'`.
+rules. The Action does not initialize configuration, install rule dependencies or
+provision provider credentials. Set `sync: 'true'` to reconcile declared imports
+and hooks before execution; synchronization failure prevents execution.
 Normal CLI behavior applies, including hook reconciliation at Git-backed points.
 
 Use `checks-only: 'true'` for deterministic release gates and other points that
 should omit reviews. Each execution still produces its own summary by default.
 Prepare any required services before invoking the Action. For example, headless
 GUI checks can start Xvfb in a preceding step and set `DISPLAY` on the Action step; the Action continues to own CLI execution and summary generation.
+
+### Tools managed by mise
+
+When mise already installs the published CLI, keep its version solely in
+`mise.toml`. Use a release containing the new `install` and `sync` inputs (these
+inputs are unavailable in v1.2.0); replace the Action placeholder with that release's SHA:
+
+```yaml
+- uses: actions/checkout@v7
+  with:
+    persist-credentials: false
+    fetch-depth: 0
+- uses: jdx/mise-action@v5
+- uses: please-behave/action@<full-commit-sha>
+  with:
+    install: 'false'
+    sync: 'true'
+    execution-point: check
+  env:
+    GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+```
+
+Prepare any project dependencies before the Action. It uses the installed CLI
+as supplied; the caller owns its version, provenance and compatibility.
+This mode neither reads mise configuration nor introduces a second version pin.
+Installation remains the default for consumers that supply `version`.
+
+### Review comparison base
+
+For review-enabled runs, the Action sets `PLEASE_CHANGE_BASE` for that invocation:
+push events use the event's `before` commit; pull requests use the merge base of
+the event's base and head commits; manual dispatch uses the checked-out HEAD.
+A nonempty `PLEASE_CHANGE_BASE` supplied by the caller takes precedence.
+Checks-only runs need no comparison history. Other events retain normal CLI
+behavior; supply `PLEASE_CHANGE_BASE` explicitly when change-triggered reviews need it.
+
+Use `fetch-depth: 0` to make comparison history available. The Action fetches a
+missing event commit from `origin` when necessary. Invalid, missing or inaccessible
+baselines fail before governance runs; a new-branch push with an all-zero `before`
+requires an explicit comparison base. It never guesses `HEAD^` or silently skips
+reviews. The resolved base is not exported to later workflow steps.
 
 For an alternate checkout path, install-only mode makes the CLI available for
 manual execution. Direct CLI execution does not produce an Action Job Summary:
@@ -116,6 +159,12 @@ or order. PASS, FAIL, ERROR, NOT_RUN and CANCELLED remain CLI statuses. Non-bloc
 failures stay visible; the CLI aggregate outcome remains authoritative. Integrity
 diagnostics appear separately, and empty plans are labeled explicitly.
 
+Review details include the CLI status, reason and up to 20 findings with source
+locations. Reviews omitted because their change trigger did not match are labeled
+as not selected. NOT_RUN and ERROR remain visible without being relabeled as PASS.
+All displayed review text is bounded and escaped; prompts and captured provider
+output are not included. This applies to every review, without project-specific scripts.
+
 The renderer supports report schema 4 and plan schema 3. It validates execution
 point, repository, rule identities, result correspondence and displayed metadata.
 Missing, malformed, incompatible or inconsistent reports produce a diagnostic
@@ -144,8 +193,8 @@ GitHub displays at most 20 step summaries per job.
 
 `uses: please-behave/action@v1.2.0` selects the Action implementation;
 `with.version: v0.5.0` selects the downloaded CLI. Updating one does not update
-the other. The Action has no default CLI version and accepts only exact stable
-CLI tags. Consult the CLI release notes before changing the selected version.
+the other. With installation enabled, the Action has no default CLI version and accepts
+only exact stable CLI tags. Consult the CLI release notes before changing the selected version.
 
 For stronger reproducibility, pin the Action to the full 40-character commit SHA
 resolved from a published tag:
@@ -182,12 +231,13 @@ GitHub release immutability. Exact version refs and full commit SHA pins are sup
 Matching CLI release assets must exist and support `please run --at`; predecessor
 CLI releases are incompatible. Checksums come from the same release as the
 archive and provide integrity verification, not an independent signature.
-There is no persistent cache, installed-version detection, version comparison,
-Windows/macOS support or support guarantee for self-hosted runners. The installer
+The installer has no persistent cache, installed-version detection or version comparison;
+`install: 'false'` deliberately delegates installation to the caller. There is no
+Windows support or support guarantee for self-hosted runners. The installer
 checks runner OS/architecture metadata; it does not detect the Ubuntu version.
 Offline tests cover installation, execution, report isolation and summary failure
 handling with fixtures. Release Candidate exercises the local
-composite Action with two sequential invocations on both supported hosted runners,
+composite Action with two sequential invocations on all four supported hosted runners,
 checking independent
 summaries and ordinary governance failure propagation.
 

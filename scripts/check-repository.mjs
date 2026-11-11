@@ -11,10 +11,10 @@ export function checkRepository(root) {
   const metadata = yaml("action.yml");
   const readme = text("README.md");
   assert.equal(metadata.runs.using, "composite", "Action must remain composite");
-  assert.deepEqual(Object.keys(metadata.inputs).sort(), ["checks-only", "execution-point", "run", "summary", "version"]);
+  assert.deepEqual(Object.keys(metadata.inputs).sort(), ["checks-only", "execution-point", "install", "run", "summary", "sync", "version"]);
   assert.equal(metadata.inputs.summary.default, "true");
   assert.equal(metadata.inputs["checks-only"].default, "false");
-  for (const step of metadata.runs.steps) {
+  for (const step of metadata.runs.steps.filter(step => step.env)) {
     assert.equal(step.env.PLEASE_CHECKS_ONLY, "${{ inputs.checks-only }}");
   }
   const execution = metadata.runs.steps.find(step => step.name === "Run Please Behave");
@@ -22,6 +22,15 @@ export function checkRepository(root) {
   assert.equal(execution.env.PLEASE_SUMMARY, "${{ inputs.summary }}");
   assert.equal(execution.run, 'bash "$ACTION_DIRECTORY/scripts/run.sh"');
   assert.equal(metadata.runs.steps[0].env.PLEASE_SUMMARY, "${{ inputs.summary }}");
+  assert.equal(metadata.inputs.install.default, "true");
+  assert.equal(metadata.inputs.sync.default, "false");
+  assert.equal(metadata.inputs.version.required, false);
+  assert.equal(metadata.runs.steps[0].env.PLEASE_INSTALL, "${{ inputs.install }}");
+  assert.equal(metadata.runs.steps[0].env.PLEASE_SYNC, "${{ inputs.sync }}");
+  const sync = metadata.runs.steps.find(step => step.name === "Synchronize governance");
+  assert.equal(sync.if, "inputs.sync == 'true'");
+  assert.equal(sync.run, "please sync --yes");
+  assert.ok(metadata.runs.steps.indexOf(sync) < metadata.runs.steps.indexOf(execution));
   assert.equal(metadata.outputs, undefined, "Documented Action has no outputs");
   for (const [name, input] of Object.entries(metadata.inputs)) {
     const row = readme.split("\n").find(line => line.startsWith(`| \`${name}\` |`));
@@ -128,6 +137,9 @@ export function checkRepository(root) {
   assert.equal(invocations[1]["continue-on-error"], true);
   assert.equal(invocations[1].env.FIXTURE_RESULT, "1");
   assert.equal(invocations[1].with["checks-only"], "true");
+  assert.equal(invocations[1].with.install, "false");
+  assert.equal(invocations[1].with.sync, "true");
+  assert.equal(invocations[1].with.version, undefined);
   const verification = candidate.steps.find(step => step.name === "Verify Action outcomes and independent summaries");
   assert.equal(verification.if, "always()");
   assert.equal(verification.run, "python3 scripts/check-action-e2e.py");
@@ -147,8 +159,9 @@ export function checkRepository(root) {
         }
         if (step.uses === "./" || step.uses?.startsWith("please-behave/action@")) {
           assert.ok(checkedOut, "Checkout must precede the governor Action");
-          assert.equal(step.with.version, "${{ steps.governor.outputs.version }}",
-            "CLI pin must match mise.toml");
+          if (step.with.install !== "false") {
+            assert.equal(step.with.version, "${{ steps.governor.outputs.version }}", "CLI pin must match mise.toml");
+          }
         }
         if (step.uses && !step.uses.startsWith("./")) {
           assert.match(step.uses, /@[a-f0-9]{40}$/, "External Actions require full SHA pins");

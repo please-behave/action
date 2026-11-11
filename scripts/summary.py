@@ -99,6 +99,33 @@ def render(report, point, code, elapsed):
                          f"{escape(name)} | {escape(rule['description'])} | "
                          f"{result['duration_ms']} ms |\n")
         lines.append("\nNon-blocking results do not replace the CLI aggregate outcome; configuration errors can still block.\n\n")
+    reviews = [rule for rule in rules if rule["kind"] == "review"]
+    if reviews:
+        lines.append("### Review details\n\n")
+        for rule in reviews:
+            result = results[rule["id"]]
+            name = rule.get("name") or rule["id"].rsplit(":", 1)[-1]
+            lines.append(f"#### {escape(name)} — {result['status']}\n\n{escape(result['reason'])}\n\n")
+            findings = result.get("findings", [])
+            require(isinstance(findings, list), "invalid review findings")
+            for finding in findings[:20]:
+                require(isinstance(finding, dict) and isinstance(finding.get("message"), str),
+                        "invalid review finding")
+                location = finding.get("path") or "No source location"
+                if finding.get("line") is not None:
+                    location = f"{location}:{finding['line']}"
+                lines.append(f"- {escape(location)}: {escape(finding['message'])}\n")
+            if len(findings) > 20:
+                lines.append("\nFindings truncated; consult the saved CLI report.\n")
+    omitted = report["plan"].get("omitted", [])
+    require(isinstance(omitted, list), "invalid omitted rules")
+    for item in omitted:
+        require(isinstance(item, dict) and isinstance(item.get("rule"), dict), "invalid omitted rule")
+        rule = item["rule"]
+        if rule.get("kind") == "review" and item.get("reason") == "trigger_not_matched":
+            require(isinstance(rule.get("id"), str), "invalid omitted review identity")
+            name = rule.get("name") or rule["id"].rsplit(":", 1)[-1]
+            lines.append(f"\nReview {escape(name)}: not selected because its change trigger did not match.\n")
     if integrity:
         lines.append("### Integrity diagnostics\n\n")
         for result in integrity:

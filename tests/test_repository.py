@@ -31,6 +31,8 @@ class RepositoryTests(unittest.TestCase):
 
     def test_contradictions_fail(self):
         cases = [("action.yml", "using: composite", "using: node24"),
+                 ("action.yml", "if: inputs.sync == 'true'", "if: inputs.sync == 'false'"),
+                 ("action.yml", "      run: please sync --yes", "      run: please run --at check"),
                  ("action.yml", "        PLEASE_SUMMARY: ${{ inputs.summary }}", "        PLEASE_SUMMARY: 'false'"),
                  ("README.md", "| `summary` | No | `'true'` |", "| `summary` | No | `'false'` |"),
                  ("README.md", "| No | `check` |", "| No | `other` |"),

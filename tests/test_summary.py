@@ -30,7 +30,7 @@ class SummaryTests(unittest.TestCase):
                         'exit "${RESULT:-0}"\n')
         tool.chmod(0o755)
         self.env = dict(os.environ, PATH=str(self.root) + os.pathsep + os.environ["PATH"],
-                        ACTION_DIRECTORY=str(ROOT), PLEASE_SUMMARY="true",
+                        GITHUB_EVENT_NAME="", ACTION_DIRECTORY=str(ROOT), PLEASE_SUMMARY="true",
                         PLEASE_EXECUTION_POINT_INPUT="check", GITHUB_STEP_SUMMARY=str(self.output),
                         FIXTURE=str(self.fixture), INVOCATIONS=str(self.root / "invocations"))
         self.report = {"schema_version": 4, "repository": str(self.root.resolve()), "overall": "PASS",
@@ -116,6 +116,38 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("| FAIL (non-blocking) | sensitive&#45;files | Description 1 |", text)
         self.assertNotIn("git&#58;", text)
         self.assertNotIn("technical ID", text)
+
+    def test_generic_review_findings_trigger_skips_and_nonexecution_are_visible(self):
+        rule = self.report["plan"]["scheduled"][1]
+        rule.update(kind="review", name="Project guidance")
+        result = next(item for item in self.report["results"] if item["id"] == rule["id"])
+        result.update(kind="review", reason="Needs <clearer> guidance", findings=[
+            dict(path="GUIDANCE.md", line=12, message="[unsafe](https://example.com) <img>")])
+        self.report["plan"]["omitted"] = [dict(rule=dict(id="other", kind="review", name="Other review"),
+                                                  reason="trigger_not_matched")]
+        for status in ("PASS", "FAIL", "ERROR", "NOT_RUN", "CANCELLED"):
+            with self.subTest(status=status):
+                result["status"] = status
+                self.save()
+                self.output.unlink(missing_ok=True)
+                self.assertEqual(self.run_action(2).returncode, 2)
+                text = self.output.read_text()
+                self.assertIn(f"Project guidance — {status}", text)
+                self.assertIn("Needs &#60;clearer&#62; guidance", text)
+                self.assertIn("GUIDANCE&#46;md&#58;12", text)
+                self.assertIn("&#91;unsafe&#93;", text)
+                self.assertNotIn("<img>", text)
+                self.assertIn("Other review: not selected because its change trigger did not match", text)
+
+    def test_review_findings_are_bounded(self):
+        self.report["plan"]["scheduled"][0]["kind"] = "review"
+        self.report["results"][-1].update(kind="review", findings=[dict(message=f"finding {i}") for i in range(21)])
+        self.save()
+        self.assertEqual(self.run_action().returncode, 0)
+        text = self.output.read_text()
+        self.assertIn("finding 19", text)
+        self.assertNotIn("finding 20", text)
+        self.assertIn("Findings truncated", text)
 
     def test_stale_report_is_restored_and_never_rendered(self):
         self.slot.write_bytes(b"previous report")

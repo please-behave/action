@@ -23,7 +23,7 @@ class ActionTests(unittest.TestCase):
         self.path_file = self.root / "github-path"
         self.env = dict(os.environ, PATH=str(self.tools) + os.pathsep + os.environ["PATH"],
                         RUNNER_TEMP=str(self.root), RUNNER_OS="Linux", RUNNER_ARCH="X64",
-                        PLEASE_VERSION="v1.2.3", PLEASE_RUN="false", PLEASE_SUMMARY="true",
+                        GITHUB_EVENT_NAME="", PLEASE_VERSION="v1.2.3", PLEASE_RUN="false", PLEASE_SUMMARY="true",
                         ACTION_DIRECTORY=str(ROOT), GITHUB_STEP_SUMMARY=str(self.root / "summary"), GITHUB_PATH=str(self.path_file),
                         ASSETS=str(self.assets), DOWNLOADS=str(self.root / "downloads"),
                         INVOCATION=str(self.root / "invocation"))
@@ -81,6 +81,21 @@ class ActionTests(unittest.TestCase):
                 self.assertEqual(invocation.read_text().splitlines(), ["run", "--at", point])
                 self.assertFalse((self.root / "unexpected").exists())
 
+    def test_existing_cli_skips_downloads_and_does_not_require_a_version(self):
+        tool = self.tools / "please"
+        tool.write_text("#!/bin/sh\nexit 0\n")
+        tool.chmod(0o755)
+        result = self.install(PLEASE_INSTALL="false", PLEASE_VERSION="", RUNNER_OS="unused")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.root / "downloads").exists())
+        self.assertFalse(self.path_file.exists())
+        result = self.install(PLEASE_INSTALL="false", PLEASE_SYNC="invalid")
+        self.assertNotEqual(result.returncode, 0)
+        tool.unlink()
+        result = self.install(PLEASE_INSTALL="false", PATH=str(self.tools) + ":/usr/bin:/bin")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("please is missing from PATH", result.stderr)
+
     def test_arm64_archive(self):
         self.archive("aarch64-unknown-linux-gnu")
         self.assertEqual(self.install(RUNNER_ARCH="ARM64").returncode, 0)
@@ -134,7 +149,7 @@ class ActionTests(unittest.TestCase):
                     {"PLEASE_VERSION": "v1.2.3;echo injected"},
                     {"PLEASE_VERSION": "v01.2.3"}, {"PLEASE_VERSION": "v1.2.3-rc.1"}, {"PLEASE_RUN": "yes"},
                     {"PLEASE_SUMMARY": "yes"}, {"PLEASE_SUMMARY": "True"}, {"PLEASE_SUMMARY": ""},
-                    {"PLEASE_CHECKS_ONLY": "yes"}, {"PLEASE_CHECKS_ONLY": "True"}, {"PLEASE_CHECKS_ONLY": ""},
+                    {"PLEASE_INSTALL": "yes"}, {"PLEASE_INSTALL": ""}, {"PLEASE_SYNC": "yes"}, {"PLEASE_SYNC": ""}, {"PLEASE_CHECKS_ONLY": "yes"}, {"PLEASE_CHECKS_ONLY": "True"}, {"PLEASE_CHECKS_ONLY": ""},
                     {"RUNNER_OS": "Windows"}, {"RUNNER_ARCH": "other"}):
             with self.subTest(env=env):
                 result = self.install(**env)

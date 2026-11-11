@@ -2,10 +2,6 @@
 set -euo pipefail
 trap 'echo "::error::Please Behave installation failed at line $LINENO. Check the release tag, release assets and network access." >&2' ERR
 
-if [[ ! "$PLEASE_VERSION" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
-  echo "::error::version must be an exact stable release tag, such as v1.2.3." >&2
-  exit 1
-fi
 if [[ "$PLEASE_RUN" != true && "$PLEASE_RUN" != false ]]; then
   echo "::error::run must be true or false." >&2
   exit 1
@@ -16,6 +12,25 @@ if [[ "$PLEASE_SUMMARY" != true && "$PLEASE_SUMMARY" != false ]]; then
 fi
 if [[ "${PLEASE_CHECKS_ONLY-false}" != true && "${PLEASE_CHECKS_ONLY-false}" != false ]]; then
   echo "::error::checks-only must be true or false." >&2
+  exit 1
+fi
+if [[ "${PLEASE_INSTALL-true}" != true && "${PLEASE_INSTALL-true}" != false ]]; then
+  echo "::error::install must be true or false." >&2
+  exit 1
+fi
+if [[ "${PLEASE_SYNC-false}" != true && "${PLEASE_SYNC-false}" != false ]]; then
+  echo "::error::sync must be true or false." >&2
+  exit 1
+fi
+if [[ "${PLEASE_INSTALL-true}" == false ]]; then
+  if ! command -v please >/dev/null; then
+    echo "::error::install is false but please is missing from PATH. Install the published CLI first." >&2
+    exit 1
+  fi
+  exit 0
+fi
+if [[ ! "${PLEASE_VERSION-}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+  echo "::error::version must be an exact stable release tag, such as v1.2.3." >&2
   exit 1
 fi
 case "$RUNNER_OS/$RUNNER_ARCH" in

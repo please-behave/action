@@ -157,7 +157,8 @@ jobs:
         env:
           FIXTURE_RESULT: '1'
         with:
-          version: ${{ steps.governor.outputs.version }}
+          install: 'false'
+          sync: 'true'
           execution-point: summary-second
           checks-only: 'true'
       - name: Verify Action outcomes and independent summaries
