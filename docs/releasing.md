@@ -13,7 +13,7 @@ external `release/releasable-project` ruleset verifies successful push CI for th
 commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
 `Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security,
 license and npm audit results are reused from CI without an age limit.
-The local CLI dependency check requires unchanged main and the pinned public stable
+The local CLI dependency check requires the pinned public stable
 CLI release with all four native archives and SHA256SUMS. API failures block publication.
 
 Readiness does not restart or wait for CI. Its policy is `.please/release-ci.json`.
@@ -168,3 +168,13 @@ publication guard exported by `release-verify`. The shared implementation checks
 the recalculated version, checkout, dispatched SHA, repository, main branch and
 current remote main. Custom prerelease/image publication reuses that source guard.
 Offline lifecycle fixtures exercise the actual pinned external module from cache.
+
+## Published governor updates
+
+`.please-version` records the exact latest stable published governor. The shared
+`renovate-governor` preset in the external ruleset repository tracks GitHub
+Releases and auto-merges newer stable versions, including major updates, after
+checks pass. Governor updates have no dependency cooldown; ordinary dependency
+policies remain unchanged. CI installs the proposed pin before running checks.
+Renovate runs determine update timing. Local governor preparation uses the same
+pin; candidate binaries never become the governor.

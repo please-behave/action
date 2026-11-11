@@ -1,5 +1,5 @@
 id = "cli-release"
-description = "Verify the pinned public CLI release and Linux assets"
+description = "Verify the pinned public CLI release and all native assets"
 run_at = ["release-readiness"]
 blocking = true
 
