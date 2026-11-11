@@ -41,7 +41,7 @@ class ReleaseReadyTests(unittest.TestCase):
                     self.verify(release=release)
 
     def test_main_queries_only_the_public_cli_release(self):
-        with patch.object(readiness.Path, "read_text", return_value="v0.1.0\n"), \
+        with patch.object(readiness.Path, "read_text", return_value='[tools]\n"github:please-behave/cli" = "0.1.0"\n'), \
                 patch.object(readiness, "gh", side_effect=[
                     self.release]) as gh, \
                 patch("builtins.print") as output:
