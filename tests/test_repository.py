@@ -14,7 +14,7 @@ class RepositoryTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         for name in ("action.yml", "README.md", "CONTRIBUTING.md", "LICENSE", "package.json",
-                     "package-lock.json", ".please-version"):
+                     "package-lock.json", "mise.toml"):
             shutil.copy2(ROOT / name, self.root / name)
         for name in (".github", "docs"):
             shutil.copytree(ROOT / name, self.root / name)

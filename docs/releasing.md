@@ -8,7 +8,7 @@ candidate or publication work.
 
 Plan uses a Semantic Release dry run to determine the next version and source SHA
 without creating tags, commits or releases. Readiness uses the published governor
-pinned in `.please-version` at `release-readiness --checks-only`. The pinned
+pinned in `mise.toml` at `release-readiness --checks-only`. The pinned
 external `rulesets/multi-point/releasable-open-source-software` ruleset verifies successful push CI for that exact
 commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
 `Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security,
@@ -83,7 +83,7 @@ Acceptance criteria:
   selection, configuration validation and exit-code normalization belong to the CLI.
 
 Install development dependencies with `npm ci --ignore-scripts` (Node 26), the
-released governor pinned in `.please-version`, and the tools listed in
+released governor pinned in `mise.toml`, and the tools listed in
 [Contributing](../CONTRIBUTING.md). Install managed hooks and synchronize external
 rules with `sh scripts/setup-git-hooks.sh --yes`. CI installs the governor through
 the published Action pinned to the full commit SHA for `v1.2.0` after checkout,
@@ -171,7 +171,7 @@ Offline lifecycle fixtures exercise the actual pinned external module from cache
 
 ## Published governor updates
 
-`.please-version` records the exact latest stable published governor. The shared
+`mise.toml` records the exact latest stable published governor. The shared
 `renovate-governor` preset in the external ruleset repository tracks GitHub
 Releases and auto-merges newer stable versions, including major updates, after
 checks pass. Governor updates have no dependency cooldown; ordinary dependency

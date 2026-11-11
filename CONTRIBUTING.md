@@ -3,7 +3,7 @@
 Follow the existing composite Action architecture and keep changes focused.
 Run `mise trust` and `mise install` to prepare the exact Node, Python, ShellCheck,
 actionlint and Gitleaks versions in `mise.toml`. Bash and Git remain host prerequisites.
-Install the released Please Behave version pinned in `.please-version`; never
+Install the released Please Behave version pinned in `mise.toml`; never
 use a candidate CLI build as the governor. Prepare Node dependencies with
 `mise run setup`, then install managed Git hooks and synchronize the
 pinned external rulesets with `mise exec -- sh scripts/setup-git-hooks.sh --yes`.
@@ -95,3 +95,11 @@ and readiness prerequisites.
 
 See [the release contract](docs/releasing.md) for versioning and publication.
 Contributions use the [PolyForm Noncommercial License 1.0.0](LICENSE).
+
+## Governor version source
+
+The exact published governor version is the `github:please-behave/cli` tool entry
+in `mise.toml`. `mise install` installs the released executable through the GitHub
+backend with checksum and available artifact-attestation verification. Run
+`mise exec -- please --version` to inspect it. CI reads this same entry for the
+published Action. Candidate binaries never become the governor.

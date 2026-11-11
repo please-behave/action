@@ -191,7 +191,7 @@ composite Action with two sequential invocations on both supported hosted runner
 checking independent
 summaries and ordinary governance failure propagation.
 
-The repository uses the released CLI pinned in `.please-version` to govern its
+The repository uses the released CLI pinned in `mise.toml` to govern its
 own development through `.please/`. CI bootstraps with the published Action pinned
 to the full commit SHA for `v1.2.0`, synchronizes external rulesets and invokes
 that published Action to run `check` with a Job Summary on both

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -41,7 +42,7 @@ export function checkRepository(root) {
   assert.equal(manifest.license, "PolyForm-Noncommercial-1.0.0");
   assert.ok(readme.replaceAll("`", "").includes(`(${manifest.license})`), "README license metadata");
   assert.equal(manifest.scripts.test, "please run --at pre-push");
-  const version = text(".please-version").trim();
+  const version = execFileSync("python3", ["-c", 'import pathlib,tomllib; print("v" + tomllib.loads(pathlib.Path("mise.toml").read_text())["tools"]["github:please-behave/cli"])'], { cwd: root, encoding: "utf8" }).trim();
   assert.match(version, /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
   const ci = yaml(".github/workflows/ci.yml");
   const release = yaml(".github/workflows/release.yml");
@@ -147,7 +148,7 @@ export function checkRepository(root) {
         if (step.uses === "./" || step.uses?.startsWith("please-behave/action@")) {
           assert.ok(checkedOut, "Checkout must precede the governor Action");
           assert.equal(step.with.version, "${{ steps.governor.outputs.version }}",
-            "CLI pin must match .please-version");
+            "CLI pin must match mise.toml");
         }
         if (step.uses && !step.uses.startsWith("./")) {
           assert.match(step.uses, /@[a-f0-9]{40}$/, "External Actions require full SHA pins");

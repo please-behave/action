@@ -63,7 +63,7 @@ jobs:
           package-manager-cache: false
       - name: Read pinned governor version
         id: governor
-        run: echo "version=$(cat .please-version)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(python3 -c 'import pathlib, tomllib; print("v" + tomllib.loads(pathlib.Path("mise.toml").read_text())["tools"]["github:please-behave/cli"])')" >> "$GITHUB_OUTPUT"
       - name: Install published governor
         uses: please-behave/action@722d5967c094e5ac4bfe25e9f82b020ff34e9487 # v1.2.0
         with:
@@ -112,7 +112,7 @@ jobs:
           python-version: '3.15'
       - name: Read pinned governor version
         id: governor
-        run: echo "version=$(cat .please-version)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(python3 -c 'import pathlib, tomllib; print("v" + tomllib.loads(pathlib.Path("mise.toml").read_text())["tools"]["github:please-behave/cli"])')" >> "$GITHUB_OUTPUT"
       - name: Prepare isolated summary acceptance fixture
         run: |
           echo "REAL_PYTHON=$(command -v python3)" >> "$GITHUB_ENV"
@@ -218,7 +218,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Read pinned governor version
         id: governor
-        run: echo "version=$(cat .please-version)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(python3 -c 'import pathlib, tomllib; print("v" + tomllib.loads(pathlib.Path("mise.toml").read_text())["tools"]["github:please-behave/cli"])')" >> "$GITHUB_OUTPUT"
       - name: Install published governor
         uses: please-behave/action@722d5967c094e5ac4bfe25e9f82b020ff34e9487 # v1.2.0
         with:

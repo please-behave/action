@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import tomllib
 
 
 def gh(*args):
@@ -22,7 +23,7 @@ def verify(release, version):
 
 
 def main():
-    version = Path(".please-version").read_text().strip()
+    version = "v" + tomllib.loads(Path("mise.toml").read_text())["tools"]["github:please-behave/cli"]
     release = gh("api", f"repos/please-behave/cli/releases/tags/{version}")
     verify(release, version)
     print("Public stable CLI release assets confirmed.")
