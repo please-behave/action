@@ -34,17 +34,20 @@ jobs:
           go install github.com/zricethezav/gitleaks/v8@v8.30.1
           sudo apt-get update
           sudo apt-get install --yes shellcheck
+      - name: Read pinned governor version
+        id: governor
+        run: echo "version=$(cat .please-version)" >> "$GITHUB_OUTPUT"
       - name: Install released governor
         uses: please-behave/action@722d5967c094e5ac4bfe25e9f82b020ff34e9487 # v1.2.0
         with:
-          version: v0.5.0
+          version: ${{ steps.governor.outputs.version }}
           run: 'false'
       - name: Synchronize governance
         run: please sync --yes
       - name: Run quality gates
         uses: please-behave/action@722d5967c094e5ac4bfe25e9f82b020ff34e9487 # v1.2.0
         with:
-          version: v0.5.0
+          version: ${{ steps.governor.outputs.version }}
           execution-point: check
           summary: 'true'
       - name: Upload governance report

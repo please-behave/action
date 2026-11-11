@@ -186,7 +186,7 @@ There is no persistent cache, installed-version detection, version comparison,
 Windows/macOS support or support guarantee for self-hosted runners. The installer
 checks runner OS/architecture metadata; it does not detect the Ubuntu version.
 Offline tests cover installation, execution, report isolation and summary failure
-handling with fixtures. The separate Action E2E workflow exercises the local
+handling with fixtures. Release Candidate exercises the local
 composite Action with two sequential invocations on both supported hosted runners,
 checking independent
 summaries and ordinary governance failure propagation.
@@ -195,15 +195,15 @@ The repository uses the released CLI pinned in `.please-version` to govern its
 own development through `.please/`. CI bootstraps with the published Action pinned
 to the full commit SHA for `v1.2.0`, synchronizes external rulesets and invokes
 that published Action to run `check` with a Job Summary on both
-supported architectures in its `Check` matrix job. Action E2E runs independently
-on pushes to main and pull requests in its `Test` matrix job. Release reuses
-successful push CI for the exact source commit and calls Action E2E as its Candidate
-gate after planning the next version. Regular repository checks run exclusively
-through Please Behave in CI; Action E2E performs only real-runner integration tests.
-Release Readiness uses the published Action with `checks-only` and summaries enabled,
-checking CI proof, source security/license, current npm advisories and public CLI assets. Publish requires
-Readiness and all four E2E platforms, then checks the planned version and source
-revision before tagging. Plan and Publish install no Please Behave or Git hooks.
+supported architectures in its `Check` matrix job. Release reuses successful push
+CI for the exact source and runs hosted Action tests as its four-platform Candidate
+matrix. Hosted tests run only during release preparation. Readiness reuses source
+security, license and npm audit results from CI and verifies the public CLI assets.
+The separate external `release/releasable-project` ruleset records common internal
+candidate evidence and verifies all four source/version/run/attempt manifests before
+publication. Publish checks the planned version and source again before tagging;
+it installs the published governor for evidence verification and never rebuilds.
+
 Commit messages are checked only by the managed local Git hook;
 CI does not validate commit history or PR titles. See
 [Contributing](CONTRIBUTING.md) for preparation and execution points.

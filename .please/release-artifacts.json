@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "repository": "please-behave/action",
+  "workflow": ".github/workflows/release.yml",
+  "root": ".",
+  "targets": {
+    "ubuntu-24.04": [
+      "action.yml",
+      "scripts/install.sh",
+      "scripts/run.sh",
+      "scripts/summary.py"
+    ],
+    "ubuntu-24.04-arm": [
+      "action.yml",
+      "scripts/install.sh",
+      "scripts/run.sh",
+      "scripts/summary.py"
+    ],
+    "macos-15": [
+      "action.yml",
+      "scripts/install.sh",
+      "scripts/run.sh",
+      "scripts/summary.py"
+    ],
+    "macos-15-intel": [
+      "action.yml",
+      "scripts/install.sh",
+      "scripts/run.sh",
+      "scripts/summary.py"
+    ]
+  }
+}

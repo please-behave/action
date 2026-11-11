@@ -9,20 +9,19 @@ candidate or publication work.
 Plan uses a Semantic Release dry run to determine the next version and source SHA
 without creating tags, commits or releases. Readiness uses the published governor
 pinned in `.please-version` at `release-readiness --checks-only`. The pinned
-external `release/readiness` ruleset verifies successful push CI for that exact
+external `release/releasable-project` ruleset verifies successful push CI for that exact
 commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
-`Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. It also checks committed-source
-sensitive filenames, secrets and license. Local rules run a current npm audit
-(blocking high/critical advisories) and `scripts/check-release-ready.py`, which
-requires unchanged main and the public stable CLI release pinned in `.please-version`,
-all four Linux/macOS archives and SHA256SUMS. API and audit failures block publication.
+`Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security,
+license and npm audit results are reused from CI without an age limit.
+The local CLI dependency check requires unchanged main and the pinned public stable
+CLI release with all four native archives and SHA256SUMS. API failures block publication.
 
 Readiness does not restart or wait for CI. Its policy is `.please/release-ci.json`.
 The newest matching CI run must succeed; missing, running, failed or incomplete
 proof blocks. Partial reruns may retain successful jobs from earlier attempts of
 that same run; unrelated runs cannot combine. CI remains independent of Release.
 
-Release Candidate calls the existing Action E2E workflow, running the checked-out
+Release Candidate runs the checked-out
 composite Action on Ubuntu 24.04 x64/ARM64 and macOS ARM64/Intel. All four entries
 must succeed. It produces no native artifacts: the Action publishes its tested source tree. Publish
 requires Plan, Readiness and the entire Candidate matrix to succeed. Semantic
@@ -122,21 +121,19 @@ do not restrict release tags or `refs/notes/*`.
 
 If required status checks are configured, replace references to the old `tests`
 and `summaries` jobs with the CI `Check (ubuntu-24.04)` and
-`Check (ubuntu-24.04-arm)` checks and Action E2E `Test` checks for all four matrix
-variants. Use the actual check names emitted by GitHub, including reusable
-workflow prefixes where applicable. This refactor does not change remote branch
+`Check (ubuntu-24.04-arm)` checks checks. Hosted candidate tests run only during Release, so they are not PR status checks. This refactor does not change remote branch
 protection settings.
 
 ## Publication procedure
 
-After reviewing CI and Action E2E results and confirming the CLI dependency,
+After reviewing CI results and confirming the CLI dependency,
 an authorized maintainer can dispatch:
 
 ```sh
 gh workflow run release.yml --ref main --repo please-behave/action
 ```
 
-The workflow reuses successful push-CI proof and reruns Action E2E after planning;
+The workflow reuses successful push-CI proof and runs hosted Action tests after planning;
 it cannot skip validation via dispatch inputs. If CI is not ready, let the
 independent CI workflow finish and dispatch Release again. Publication is serialized
 and does not cancel an active release. GitHub's default concurrency
@@ -156,3 +153,12 @@ CI checks the checkout before publication; it cannot prove that an unpublished
 remote Action tag resolves correctly. Verify the published ref in a
 consumer workflow after publication. Do not publish while the CLI dependency is
 unavailable.
+
+## Common candidate evidence
+
+Each successful hosted candidate restores project governance and uses the external
+`release-contract` Check at `release-record` to hash the tested Action metadata and
+runtime scripts. Publish uses the same published governor at `release-verify` to
+require all four current-run/current-attempt manifests and matching source hashes.
+The internal manifests follow `.please/release-artifacts.json`; no native or public
+release asset is added. Plan installs no governor; Publish installs no build tools.
