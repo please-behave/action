@@ -1,12 +1,19 @@
 # Contributing
 
 Follow the existing composite Action architecture and keep changes focused.
-Use Node 26, Python 3, Bash, Git, ShellCheck, actionlint and Gitleaks 8.30.1.
+Run `mise trust` and `mise install` to prepare the exact Node, Python, ShellCheck,
+actionlint and Gitleaks versions in `mise.toml`. Bash and Git remain host prerequisites.
 Install the released Please Behave version pinned in `.please-version`; never
 use a candidate CLI build as the governor. Prepare Node dependencies with
-`npm ci --ignore-scripts`, then install managed Git hooks and synchronize the
-pinned external rulesets with `sh scripts/setup-git-hooks.sh --yes`.
+`mise run setup`, then install managed Git hooks and synchronize the
+pinned external rulesets with `mise exec -- sh scripts/setup-git-hooks.sh --yes`.
 Setup needs network access; pre-commit and pre-push use prepared dependencies offline.
+Use `mise exec -- please run --at pre-commit` or `mise exec -- please run --at pre-push`
+for manual checks. Run Git as `mise exec -- git commit` and `mise exec -- git push`
+so managed hooks inherit the configured tools without shell activation.
+Plain commands require mise shell activation or equivalent PATH setup;
+`mise install` alone does not activate tools. Keep the separately installed
+published governor on PATH and supply credentials externally.
 
 Please Behave owns the repository's quality gates:
 
