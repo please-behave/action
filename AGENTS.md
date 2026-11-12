@@ -12,6 +12,9 @@ Prioritize consistency with existing conventions and the smallest coherent imple
   installation, checksum verification and minimal workflow permissions.
 - Use Please Behave for governance. Define repository-specific rules in
   `.please/` and reuse external rulesets without duplicating their behavior.
+- Keep the root for the Action. Rule scripts and their tests live in their
+  `.please/checks/<rule>/` directory; scripts used only by workflows live in
+  `.github/scripts/` with their tests.
 - Review changes for inconsistencies, stale references and unnecessary additions.
 - Ask before making significant architectural changes or modifying release behavior.
 

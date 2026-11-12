@@ -248,7 +248,7 @@ local and CI scripts. CI invokes one published Action step with
 `install: 'false'` and `sync: 'true'` to run `check` with summaries on both
 supported architectures in its `Check` matrix job. Release reuses successful push
 CI for the exact source and runs hosted Action tests as its four-platform Candidate
-matrix. Its synthetic fixture lives in `scripts/prepare-action-e2e.sh`.
+matrix. Its synthetic fixture lives in `.github/scripts/prepare-action-e2e.sh`.
 Hosted tests run only during release preparation. Readiness reuses source
 security, license and npm audit results from CI and verifies the public CLI assets.
 The only project custom execution point is `release`, for the CLI dependency

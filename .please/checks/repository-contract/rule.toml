@@ -4,5 +4,5 @@ run_at = ["pre-commit", "pre-push", "check"]
 blocking = true
 
 [check]
-command = "node scripts/check-repository.mjs"
+command = "node @rule/check.mjs"
 timeout_seconds = 60

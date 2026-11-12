@@ -31,7 +31,7 @@ export default {
         ],
       },
     }],
-    "./scripts/semantic-release-plugin.mjs",
+    "./.github/scripts/semantic-release-plugin.mjs",
     ["@semantic-release/github", {
       successComment: false,
       failComment: false,

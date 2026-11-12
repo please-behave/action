@@ -62,7 +62,7 @@ jobs:
         with:
           install_args: python github:please-behave/cli
       - name: Verify exact-source CI prerequisites
-        run: python3 scripts/check-release-ci.py
+        run: python3 .github/scripts/check-release-ci.py
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - name: Verify release dependency
@@ -106,7 +106,7 @@ jobs:
         with:
           install_args: python github:please-behave/cli
       - name: Prepare isolated summary acceptance fixture
-        run: bash scripts/prepare-action-e2e.sh
+        run: bash .github/scripts/prepare-action-e2e.sh
       - name: Invoke Action expecting success and a default summary
         id: passing
         uses: ./
@@ -132,13 +132,13 @@ jobs:
           PASSING_CONCLUSION: ${{ steps.passing.conclusion }}
           FAILING_OUTCOME: ${{ steps.failing.outcome }}
           FAILING_CONCLUSION: ${{ steps.failing.conclusion }}
-        run: python3 scripts/check-action-e2e.py
+        run: python3 .github/scripts/check-action-e2e.py
       - name: Restore project governance
         run: |
           rm -rf .please
           mv "$RUNNER_TEMP/original-please" .please
       - name: Record release candidate evidence
-        run: python3 scripts/release-evidence.py record
+        run: python3 .github/scripts/release-evidence.py record
         env:
           EXPECTED_RELEASE_VERSION: ${{ needs.plan.outputs.version }}
           RELEASE_TARGET: ${{ matrix.os }}
@@ -179,7 +179,7 @@ jobs:
           path: release-evidence
           merge-multiple: true
       - name: Verify complete release candidate evidence
-        run: python3 scripts/release-evidence.py verify
+        run: python3 .github/scripts/release-evidence.py verify
         env:
           EXPECTED_RELEASE_VERSION: ${{ needs.plan.outputs.version }}
       - name: Publish semantic Action release

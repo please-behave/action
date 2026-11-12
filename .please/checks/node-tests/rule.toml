@@ -4,5 +4,5 @@ run_at = ["pre-push", "check"]
 blocking = true
 
 [check]
-command = "node tests/test-release.mjs"
+command = "node .github/scripts/test-release.mjs"
 timeout_seconds = 300

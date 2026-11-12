@@ -6,7 +6,7 @@ actionlint and Gitleaks versions in `mise.toml`. Bash and Git remain host prereq
 Install the released Please Behave version pinned in `mise.toml`; never
 use a candidate CLI build as the governor. Prepare Node dependencies with
 `mise run ci:prepare`, then install managed Git hooks and synchronize the
-pinned external rulesets with `mise exec -- sh scripts/setup-git-hooks.sh --yes`.
+pinned external rulesets with `mise exec -- please sync --yes`.
 Setup needs network access; pre-commit and pre-push use prepared dependencies offline.
 Use `mise exec -- please run --at pre-commit` or `mise exec -- please run --at pre-push`
 for manual checks. Run Git as `mise exec -- git commit` and `mise exec -- git push`
@@ -19,10 +19,10 @@ Please Behave owns the repository's quality gates:
 
 | Execution point | Checks |
 | --- | --- |
-| `pre-commit` | Repository metadata/documentation contracts, standalone shell scripts and the imported AGENTS.md size check |
+| `pre-commit` | Repository metadata/documentation contracts and the imported AGENTS.md size check |
 | `commit-msg` | Imported Conventional Commits Check and advisory header wording Review |
-| `pre-push` | Offline Python and Node tests, workflow/shell/contract checks, imported security and license checks |
-| `check` | The same quality gates as `pre-push` plus the AGENTS.md size check, on the CI checkout |
+| `pre-push` | Offline Python and Node tests, the repository contract, imported security, license, workflow and shell checks |
+| `check` | The same quality gates as `pre-push` plus the AGENTS.md size check, the npm audit and the conditional AGENTS.md review, on the CI checkout |
 | `release` | Public stable CLI dependency and all four native assets |
 
 Commit and push to run validation through the installed hooks. `npm test`
@@ -87,13 +87,13 @@ pre-push. Clean CI checkouts provide the release gate. Security scans cover a
 snapshot, not all historical commits or every pushed ref.
 
 Release plans the next version, then runs Readiness and the E2E Candidate in
-parallel. Readiness runs `scripts/check-release-ci.py` to verify both named CI
+parallel. Readiness runs `.github/scripts/check-release-ci.py` to verify both named CI
 matrix entries for the dispatched commit, reusing source security, license and
 npm audit results. The independent `cli-release` Check at `release` verifies the
 public CLI dependency assets through the published Action.
 It reuses existing push CI rather than rerunning general checks. Plan and
 Publish run no Please Behave or hooks. Candidate evidence is recorded and verified
-by `scripts/release-evidence.py`; the local Semantic Release plugin checks source
+by `.github/scripts/release-evidence.py`; the local Semantic Release plugin checks source
 and version without installing governance. Publication refuses a changed planned
 version or source revision before tagging. See the release contract for CI reruns
 and readiness prerequisites.

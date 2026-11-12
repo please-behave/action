@@ -4,5 +4,5 @@ run_at = ["release"]
 blocking = true
 
 [check]
-command = "python3 scripts/check-release-ready.py"
+command = "python3 @rule/check.py"
 timeout_seconds = 180

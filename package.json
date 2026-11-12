@@ -8,9 +8,8 @@
     "node": ">=26 <27"
   },
   "scripts": {
-    "test": "please run --at pre-push",
-    "release:plan": "node scripts/release-plan.mjs",
-    "release": "node scripts/publish-release.mjs"
+    "release:plan": "node .github/scripts/release-plan.mjs",
+    "release": "node .github/scripts/publish-release.mjs"
   },
   "devDependencies": {
     "@semantic-release/commit-analyzer": "13.0.1",

@@ -5,8 +5,8 @@ from pathlib import Path
 import unittest
 from unittest.mock import call, patch
 
-ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("readiness", ROOT / "scripts/check-release-ready.py")
+ROOT = Path(__file__).resolve().parents[3]
+spec = importlib.util.spec_from_file_location("readiness", ROOT / ".please/checks/cli-release/check.py")
 readiness = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(readiness)
 

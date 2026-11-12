@@ -6,20 +6,24 @@ import sys
 import tomllib
 
 
+class Verdict(ValueError):
+    """The pinned CLI release does not satisfy the Action; not a technical failure."""
+
+
 def gh(*args):
     return json.loads(subprocess.check_output(["gh", *args], text=True))
 
 
 def verify(release, version):
     if release["draft"] or release["prerelease"] or release["tag_name"] != version:
-        raise ValueError(f"The public stable CLI {version} release is required.")
+        raise Verdict(f"The public stable CLI {version} release is required.")
     assets = {a["name"] for a in release["assets"] if a["state"] == "uploaded" and a["size"] > 0}
     required = {"SHA256SUMS", f"please-{version}-x86_64-unknown-linux-gnu.tar.gz",
                 f"please-{version}-aarch64-unknown-linux-gnu.tar.gz",
                 f"please-{version}-x86_64-apple-darwin.tar.gz",
                 f"please-{version}-aarch64-apple-darwin.tar.gz"}
     if not required <= assets:
-        raise ValueError(f"CLI {version} is missing required Linux/macOS release assets.")
+        raise Verdict(f"CLI {version} is missing required Linux/macOS release assets.")
 
 
 def main():
@@ -32,5 +36,9 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
-        sys.exit(f"Release readiness failed: {error}")
+    except Verdict as error:
+        print(f"FAIL: {error}")
+        sys.exit(1)
+    except Exception as error:  # A crash or tooling problem is never a FAIL verdict.
+        print(f"ERROR: {type(error).__name__}: {error}", file=sys.stderr)
+        sys.exit(2)

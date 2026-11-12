@@ -5,8 +5,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("action_e2e", ROOT / "scripts/check-action-e2e.py")
+ROOT = Path(__file__).resolve().parents[2]
+spec = importlib.util.spec_from_file_location("action_e2e", ROOT / ".github/scripts/check-action-e2e.py")
 e2e = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(e2e)
 

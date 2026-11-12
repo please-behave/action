@@ -8,7 +8,7 @@ candidate or publication work.
 
 Plan uses a Semantic Release dry run to determine the next version and source SHA
 without creating tags, commits or releases. Readiness runs
-`scripts/check-release-ci.py` directly to verify successful push CI for the exact
+`.github/scripts/check-release-ci.py` directly to verify successful push CI for the exact
 commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
 `Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security,
 license and npm audit results are reused from CI without an age limit. The
@@ -156,7 +156,7 @@ unavailable.
 ## Common candidate evidence
 
 Each successful hosted candidate restores project governance and runs
-`scripts/release-evidence.py record` to hash the tested Action metadata and all
+`.github/scripts/release-evidence.py record` to hash the tested Action metadata and all
 runtime scripts, including comparison-base handling. Publish runs the same script
 with `verify` to require all four current-run/current-attempt manifests and matching
 source hashes. The internal manifests follow `.github/release-artifacts.json`;
@@ -164,7 +164,7 @@ no native or public release asset is added.
 
 Plan and Publish never install or invoke Please Behave, synchronize governance,
 or install Git hooks. Evidence verification is release tooling, outside governance.
-Before tagging, the local `scripts/semantic-release-plugin.mjs` checks the
+Before tagging, the local `.github/scripts/semantic-release-plugin.mjs` checks the
 recalculated version, checkout, dispatched SHA, repository, main branch and
 current remote main. Offline lifecycle fixtures exercise that local guard
 without requiring a cached external module.

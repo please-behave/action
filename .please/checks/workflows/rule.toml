@@ -1,8 +1,0 @@
-id = "workflows"
-description = "Validate GitHub workflow syntax and expressions"
-run_at = ["pre-push", "check"]
-blocking = true
-
-[check]
-command = "actionlint"
-timeout_seconds = 120

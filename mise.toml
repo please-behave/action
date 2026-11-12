@@ -11,10 +11,6 @@ alias = "setup"
 description = "Fetch locked npm dependencies for CI and offline Git hooks"
 run = "npm ci --ignore-scripts"
 
-[tasks."hooks:install"]
-description = "Synchronize managed Please Behave hooks and imports"
-run = "sh scripts/setup-git-hooks.sh"
-
 [tasks.release]
 description = "Start the GitHub Release workflow for remote main"
 run = "gh workflow run release.yml --ref main"
