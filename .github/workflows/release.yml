@@ -71,7 +71,6 @@ jobs:
           install: 'false'
           sync: 'true'
           execution-point: release
-          checks-only: 'true'
           summary: 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -124,7 +123,6 @@ jobs:
           install: 'false'
           sync: 'true'
           execution-point: summary-second
-          checks-only: 'true'
       - name: Verify Action outcomes and independent summaries
         if: always()
         env:
