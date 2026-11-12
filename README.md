@@ -23,9 +23,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: please-behave/action@v1.3.0
+      - uses: please-behave/action@<action-tag>
         with:
-          version: v0.5.1
+          version: <cli-tag>
           execution-point: check
 ```
 
@@ -92,7 +92,7 @@ When mise already installs the published CLI, keep its version solely in
     persist-credentials: false
     fetch-depth: 0
 - uses: jdx/mise-action@v5
-- uses: please-behave/action@196e1d61f898e0cb77c58ab3dd6667f021321d5e # v1.3.0
+- uses: please-behave/action@<full-commit-sha> # <action-tag>
   with:
     install: 'false'
     sync: 'true'
@@ -130,9 +130,9 @@ steps:
     with:
       path: source
       persist-credentials: false
-  - uses: please-behave/action@v1.3.0
+  - uses: please-behave/action@<action-tag>
     with:
-      version: v0.5.1
+      version: <cli-tag>
       run: 'false'
   - run: please run --at check
     working-directory: source
@@ -190,8 +190,8 @@ GitHub displays at most 20 step summaries per job.
 
 ## Version selection and pinning
 
-`uses: please-behave/action@v1.3.0` selects the Action implementation;
-`with.version: v0.5.1` selects the downloaded CLI. Updating one does not update
+`uses: please-behave/action@<action-tag>` selects the Action implementation;
+`with.version: <cli-tag>` selects the downloaded CLI. Updating one does not update
 the other. With installation enabled, the Action has no default CLI version and accepts
 only exact stable CLI tags. Consult the CLI release notes before changing the selected version.
 
@@ -199,7 +199,7 @@ For stronger reproducibility, pin the Action to the full 40-character commit SHA
 resolved from a published tag:
 
 ```sh
-gh api repos/please-behave/action/git/ref/tags/v1.3.0 --jq .object.sha
+gh api repos/please-behave/action/git/ref/tags/<action-tag> --jq .object.sha
 ```
 
 Use that SHA in `uses: please-behave/action@<full-commit-sha>` and record the
