@@ -12,7 +12,7 @@ without creating tags, commits or releases. Readiness runs
 commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
 `Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security,
 license and npm audit results are reused from CI without an age limit. The
-published Action v1.3.0 then uses the mise-installed governor at `release` with
+published Action then uses the mise-installed governor at `release` with
 `install: 'false'`, `sync: 'true'` and `checks-only: 'true'`.
 
 The local CLI dependency check requires the pinned public stable
@@ -99,7 +99,7 @@ Candidate needs only `contents: read`.
 
 The managed `commit-msg` hook runs the imported syntax Check and advisory
 header-only wording Review through the independently imported Gemini provider.
-The published v0.5.1 governor supports both imports. CI does not validate
+CI does not validate
 commit ranges or PR titles. Semantic Release still analyzes commits for version
 selection; that publication operation is separate from message validation.
 
@@ -141,8 +141,7 @@ required. A publication failure can leave a tag without a GitHub Release; inspec
 both remote states before retrying. Published immutable releases cannot be repaired
 by moving a tag or replacing assets; publish a new version when needed.
 
-Repository CI and Readiness use published Action v1.3.0 pinned to
-`196e1d61f898e0cb77c58ab3dd6667f021321d5e`, with summaries enabled.
+Repository CI and Readiness use published Action pinned to a full commit, with summaries enabled.
 Mise owns installation; the Action uses `install: 'false'` and `sync: 'true'`.
 The Action repository's own governance uses the published release; local Action
 invocations remain confined to acceptance tests.

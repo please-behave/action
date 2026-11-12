@@ -19,10 +19,10 @@ Please Behave owns the repository's quality gates:
 
 | Execution point | Checks |
 | --- | --- |
-| `pre-commit` | Repository metadata/documentation contracts and standalone shell scripts |
+| `pre-commit` | Repository metadata/documentation contracts, standalone shell scripts and the imported AGENTS.md size check |
 | `commit-msg` | Imported Conventional Commits Check and advisory header wording Review |
 | `pre-push` | Offline Python and Node tests, workflow/shell/contract checks, imported security and license checks |
-| `check` | The same quality gates as `pre-push`, on the CI checkout |
+| `check` | The same quality gates as `pre-push` plus the AGENTS.md size check, on the CI checkout |
 | `release` | Public stable CLI dependency and all four native assets |
 
 Commit and push to run validation through the installed hooks. `npm test`
@@ -31,7 +31,7 @@ Coding agents use the Git hooks for validation. Inspect failures with
 `please status --details`, fix the cause and retry the Git operation.
 Keep new repository checks in `.please/` and reuse the configured external rules.
 
-The imported `rulesets/commit-msg/repository-conventions` ruleset is the authoritative message validator.
+The imported `rulesets/multi-point/repository-conventions` ruleset is the authoritative message validator.
 Scopes are optional and configured in `.please/commit-scopes.txt`: action, ci,
 deps, docs, git, release and tests. There is no additional local message policy.
 The shared advisory Review evaluates only the header for specific English

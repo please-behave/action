@@ -7,7 +7,7 @@ GitHub review context and per-invocation Job Summaries.
 
 ## Usage
 
-The examples use published Action `v1.3.0` with CLI `v0.5.1`.
+Replace the Action ref and CLI version in the examples with the releases you adopt.
 macOS and `checks-only` support require Action `v1.2.0` or later.
 Use CLI `v0.1.0` or a compatible later stable release. The Action ref and CLI
 version are independent.
@@ -244,7 +244,7 @@ The repository uses the released CLI pinned in `mise.toml` to govern its
 own development through `.please/`. `mise install` installs the configured tools;
 `mise run ci:prepare` fetches locked npm dependencies without running checks.
 The `setup` task remains an alias. Python is exactly pinned in `mise.toml` for
-local and CI scripts. CI invokes one published Action v1.3.0 step with
+local and CI scripts. CI invokes one published Action step with
 `install: 'false'` and `sync: 'true'` to run `check` with summaries on both
 supported architectures in its `Check` matrix job. Release reuses successful push
 CI for the exact source and runs hosted Action tests as its four-platform Candidate
