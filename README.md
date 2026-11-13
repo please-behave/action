@@ -214,11 +214,11 @@ The manually dispatched Release workflow requires Please Behave quality checks
 and Action E2E tests on both supported architectures, plus release readiness
 checks before Semantic Release can publish a Git tag and GitHub Release.
 Versions start at `1.0.0`
-without seed tags. Features increment minor; fixes, performance improvements and
-effective reverts increment patch; breaking changes increment major. Documentation
-and development tooling changes alone do not release. Classify security fixes to
-runtime code or dependencies as `fix`, including `fix(deps)`; development dependency
-updates use `chore(deps)`. No release commit, changelog, npm package or native
+without seed tags. Features increment minor; fixes, performance improvements,
+effective reverts, `chore`, `refactor`, `build` and `config` changes increment patch;
+breaking changes increment major. `ci`, `docs`, `style` and `test` changes alone do
+not release. Classify security fixes to runtime code or dependencies as `fix`,
+including `fix(deps)`; development dependency updates use `chore(deps)`. No release commit, changelog, npm package or native
 artifact is generated. See the [release contract](docs/releasing.md) for the
 complete policy. Action and CLI release numbers evolve independently.
 

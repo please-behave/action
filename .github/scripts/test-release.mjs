@@ -21,10 +21,16 @@ async function testPolicy() {
   for (const type of ["fix", "perf", "revert"]) {
     assert.equal(await analyze([`${type}: maintain Action`]), "patch");
   }
-  for (const type of ["build", "chore", "ci", "config", "docs", "refactor", "style", "test"]) {
+  for (const type of ["build", "chore", "config", "refactor"]) {
+    assert.equal(await analyze([`${type}: maintain Action`]), "patch");
+  }
+  for (const type of ["ci", "docs", "style", "test"]) {
     assert.equal(await analyze([`${type}: maintain Action`]), null);
+  }
+  for (const type of ["build", "chore", "ci", "config", "docs", "refactor", "style", "test"]) {
     assert.equal(await analyze([`${type}!: change contract`]), "major");
   }
+  assert.equal(await analyze(["build(release): generated version"]), null);
   assert.equal(await analyze(["feat: add input", "fix: repair installation"]), "minor");
   assert.equal(await analyze(["fix: change contract\n\nBREAKING CHANGE: input removed"]), "major");
   assert.equal(await analyze([
@@ -32,7 +38,7 @@ async function testPolicy() {
     `revert(action): feat(action): add input\n\nThis reverts commit ${"1".repeat(40)}.`,
   ]), null);
   assert.equal(await analyze(["fix(deps): patch a runtime security vulnerability"]), "patch");
-  assert.equal(await analyze(["chore(deps): update release tooling"]), null);
+  assert.equal(await analyze(["chore(deps): update release tooling"]), "patch");
 }
 
 await testPolicy();

@@ -1,3 +1,4 @@
+// Share revert parsing between version calculation and release notes, including scopes.
 const parserOpts = {
   revertPattern: /^revert(?:\([^)]+\))?!?:\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i,
   revertCorrespondence: ["header", "hash"],
@@ -14,8 +15,12 @@ export default {
       releaseRules: [
         { breaking: true, release: "major" },
         { type: "feat", release: "minor" },
-        ...["fix", "perf", "revert"].map(type => ({ type, release: "patch" })),
-        ...["build", "chore", "ci", "config", "docs", "refactor", "style", "test"].map(type => ({ type, release: false })),
+        ...["fix", "perf", "revert", "chore", "refactor", "config"].map(type => ({ type, release: "patch" })),
+        // Ignore generated version commits.
+        { type: "build", scope: "!release", release: "patch" },
+        { type: "build", scope: null, release: "patch" },
+        { type: "build", scope: "release", release: false },
+        ...["ci", "docs", "style", "test"].map(type => ({ type, release: false })),
       ],
     }],
     ["@semantic-release/release-notes-generator", {
@@ -26,8 +31,13 @@ export default {
           { type: "feat", section: "Features" },
           { type: "fix", section: "Bug Fixes" },
           { type: "perf", section: "Performance Improvements" },
+          { type: "chore", section: "Maintenance" },
+          { type: "build", scope: "release", hidden: true },
+          { type: "build", section: "Build System" },
+          { type: "refactor", section: "Code Refactoring" },
           { type: "revert", section: "Reverts" },
-          ...["build", "chore", "ci", "config", "docs", "refactor", "style", "test"].map(type => ({ type, hidden: true })),
+          { type: "config", section: "Configuration" },
+          ...["ci", "docs", "style", "test"].map(type => ({ type, hidden: true })),
         ],
       },
     }],

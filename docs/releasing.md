@@ -41,13 +41,13 @@ Later versions follow Conventional Commits:
 | --- | --- |
 | Breaking change (`!` or `BREAKING CHANGE:`), any accepted type | Major |
 | `feat` | Minor |
-| `fix`, `perf`, effective `revert` | Patch |
-| `build`, `chore`, `ci`, `config`, `docs`, `refactor`, `style`, `test` | None unless breaking |
+| `fix`, `perf`, effective `revert`, `chore`, `refactor`, `build`, `config` | Patch |
+| `build(release)`, `ci`, `docs`, `style`, `test` | None unless breaking |
 
-Use `fix` for runtime security fixes, including `fix(deps)` for runtime dependency
-fixes. Use `chore(deps)` for development dependency updates. Select types according
-to the effect of a change; documentation and development tooling alone do not
-warrant a release. Reverted commit pairs cancel when both are unreleased.
+These levels follow the shared Semantic Release baseline. Use `fix` for runtime
+security fixes, including `fix(deps)` for runtime dependency fixes. Use `chore(deps)`
+for development dependency updates; they release a patch. Use `ci`, `docs`, `style`
+or `test` for changes that must not release. Reverted commit pairs cancel when both are unreleased.
 
 Acceptance criteria:
 
