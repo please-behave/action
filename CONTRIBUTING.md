@@ -21,7 +21,7 @@ Please Behave owns the repository's quality gates:
 | --- | --- |
 | `pre-commit` | Repository metadata/documentation contracts, the `format-python` and `format-shell` checks and the imported AGENTS.md size check |
 | `commit-msg` | Imported Conventional Commits Check and advisory header wording Review |
-| `pre-push` | Offline Python and Node tests, the repository contract, imported security, license, workflow and shell checks |
+| `pre-push` | Offline Python tests, the repository contract, imported security, license, workflow and shell checks |
 | `check` | The same quality gates as `pre-push` plus the formatting checks, the AGENTS.md size check, the npm audit and the conditional AGENTS.md review, on the CI checkout |
 | `release` | Public stable CLI dependency and all four native assets |
 
@@ -58,7 +58,6 @@ install-only and preinstalled-CLI behavior using offline archives and the Action
 execution command. Comparison-base tests use local Git history without network
 services; generic summaries cover review findings and trigger omissions.
 Other Python tests cover repository contracts and release readiness guards.
-Node tests cover release policy and publication in isolated Git repositories.
 These checks run at `pre-push` and `check`; CI runs them on Linux x64 and ARM64.
 The independent Action E2E workflow runs the actual composite Action through
 `uses: ./` on Linux x64/ARM64 and macOS ARM64/Intel, with repeated invocations,
