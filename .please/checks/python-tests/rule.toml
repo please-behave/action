@@ -1,5 +1,6 @@
 id = "python-tests"
-description = "Test the Action scripts, workflow scripts and rule scripts offline"
+name = "Python tests"
+description = "Python tests for Action scripts, workflow scripts and local rules pass"
 run_at = ["pre-push", "check"]
 blocking = true
 

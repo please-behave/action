@@ -1,5 +1,6 @@
-id = "shfmt"
-description = "Require tracked shell scripts to be formatted by shfmt"
+id = "format-shell"
+name = "Shell formatting"
+description = "Shell scripts are formatted with shfmt"
 run_at = ["pre-commit", "check"]
 blocking = true
 

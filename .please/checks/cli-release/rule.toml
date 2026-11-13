@@ -1,5 +1,6 @@
 id = "cli-release"
-description = "Verify the pinned public CLI release and all native assets"
+name = "Pinned CLI release"
+description = "The pinned public CLI release is published and ships all native assets"
 run_at = ["release"]
 blocking = true
 
