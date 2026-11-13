@@ -21,14 +21,17 @@ def main():
     if not scripts:
         print("PASS: no shell scripts to format")
         return 0
-    result = subprocess.run(["shfmt", "-d", "--", *scripts])
+    result = subprocess.run(["shfmt", "-d", "--", *scripts], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode == 0:
         print(f"PASS: shfmt found no formatting differences in {len(scripts)} scripts")
         return 0
-    if result.returncode == 1:  # shfmt reports differences with exit 1.
+    # shfmt exits 1 for differences and for syntax errors; only differences appear on standard output.
+    if result.returncode == 1 and result.stdout:
+        print(os.fsdecode(result.stdout))
         print("FAIL: shfmt reported formatting differences; run mise format")
         return 1
-    raise RuntimeError(f"shfmt failed (exit {result.returncode})")
+    detail = os.fsdecode(result.stderr).strip()
+    raise RuntimeError(f"shfmt failed (exit {result.returncode}){': ' + detail if detail else ''}")
 
 
 if __name__ == "__main__":

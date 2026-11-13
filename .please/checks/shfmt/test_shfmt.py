@@ -14,8 +14,8 @@ check = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(check)
 
 
-def completed(code, stdout=b""):
-    return subprocess.CompletedProcess([], code, stdout, b"")
+def completed(code, stdout=b"", stderr=b""):
+    return subprocess.CompletedProcess([], code, stdout, stderr)
 
 
 class ShfmtTests(unittest.TestCase):
@@ -43,7 +43,11 @@ class ShfmtTests(unittest.TestCase):
         self.assertEqual(run.call_count, 1)
 
     def test_differences_fail(self):
-        self.assertEqual(self.run_main(completed(0, b"bash.sh\0"), completed(1))[0], 1)
+        self.assertEqual(self.run_main(completed(0, b"bash.sh\0"), completed(1, b"--- bash.sh\n"))[0], 1)
+
+    def test_syntax_errors_are_errors_not_differences(self):
+        with self.assertRaisesRegex(RuntimeError, "unexpected token"):
+            self.run_main(completed(0, b"bash.sh\0"), completed(1, b"", b"bash.sh:1:1: unexpected token"))
 
     def test_other_exit_codes_and_git_failures_are_errors(self):
         with self.assertRaises(RuntimeError):
