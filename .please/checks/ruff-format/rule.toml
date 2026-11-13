@@ -1,0 +1,8 @@
+id = "ruff-format"
+description = "Require Python sources to be formatted by ruff"
+run_at = ["pre-commit", "check"]
+blocking = true
+
+[check]
+command = "ruff format --check"
+timeout_seconds = 60

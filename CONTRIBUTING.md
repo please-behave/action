@@ -19,10 +19,10 @@ Please Behave owns the repository's quality gates:
 
 | Execution point | Checks |
 | --- | --- |
-| `pre-commit` | Repository metadata/documentation contracts and the imported AGENTS.md size check |
+| `pre-commit` | Repository metadata/documentation contracts, the `ruff-format` and `shfmt` checks and the imported AGENTS.md size check |
 | `commit-msg` | Imported Conventional Commits Check and advisory header wording Review |
 | `pre-push` | Offline Python and Node tests, the repository contract, imported security, license, workflow and shell checks |
-| `check` | The same quality gates as `pre-push` plus the AGENTS.md size check, the npm audit and the conditional AGENTS.md review, on the CI checkout |
+| `check` | The same quality gates as `pre-push` plus the formatting checks, the AGENTS.md size check, the npm audit and the conditional AGENTS.md review, on the CI checkout |
 | `release` | Public stable CLI dependency and all four native assets |
 
 Commit and push to run validation through the installed hooks. `npm test`
