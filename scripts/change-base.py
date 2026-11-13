@@ -1,4 +1,5 @@
 """Resolve an explicit CI event baseline; never guess HEAD^ or silently skip."""
+
 import json
 import os
 from pathlib import Path

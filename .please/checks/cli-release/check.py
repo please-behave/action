@@ -1,4 +1,5 @@
 """Require the public stable CLI assets consumed by the Action."""
+
 import json
 from pathlib import Path
 import subprocess
@@ -18,10 +19,13 @@ def verify(release, version):
     if release["draft"] or release["prerelease"] or release["tag_name"] != version:
         raise Verdict(f"The public stable CLI {version} release is required.")
     assets = {a["name"] for a in release["assets"] if a["state"] == "uploaded" and a["size"] > 0}
-    required = {"SHA256SUMS", f"please-{version}-x86_64-unknown-linux-gnu.tar.gz",
-                f"please-{version}-aarch64-unknown-linux-gnu.tar.gz",
-                f"please-{version}-x86_64-apple-darwin.tar.gz",
-                f"please-{version}-aarch64-apple-darwin.tar.gz"}
+    required = {
+        "SHA256SUMS",
+        f"please-{version}-x86_64-unknown-linux-gnu.tar.gz",
+        f"please-{version}-aarch64-unknown-linux-gnu.tar.gz",
+        f"please-{version}-x86_64-apple-darwin.tar.gz",
+        f"please-{version}-aarch64-apple-darwin.tar.gz",
+    }
     if not required <= assets:
         raise Verdict(f"CLI {version} is missing required Linux/macOS release assets.")
 

@@ -1,4 +1,5 @@
 """Offline tests of the public Action installer and its execution command."""
+
 import hashlib
 import io
 import os
@@ -21,14 +22,27 @@ class ActionTests(unittest.TestCase):
         self.assets = self.root / "assets"
         self.assets.mkdir()
         self.path_file = self.root / "github-path"
-        self.env = dict(os.environ, PATH=str(self.tools) + os.pathsep + os.environ["PATH"],
-                        RUNNER_TEMP=str(self.root), RUNNER_OS="Linux", RUNNER_ARCH="X64",
-                        GITHUB_EVENT_NAME="", PLEASE_VERSION="v1.2.3", PLEASE_RUN="false", PLEASE_SUMMARY="true",
-                        ACTION_DIRECTORY=str(ROOT), GITHUB_STEP_SUMMARY=str(self.root / "summary"), GITHUB_PATH=str(self.path_file),
-                        ASSETS=str(self.assets), DOWNLOADS=str(self.root / "downloads"),
-                        INVOCATION=str(self.root / "invocation"))
+        self.env = dict(
+            os.environ,
+            PATH=str(self.tools) + os.pathsep + os.environ["PATH"],
+            RUNNER_TEMP=str(self.root),
+            RUNNER_OS="Linux",
+            RUNNER_ARCH="X64",
+            GITHUB_EVENT_NAME="",
+            PLEASE_VERSION="v1.2.3",
+            PLEASE_RUN="false",
+            PLEASE_SUMMARY="true",
+            ACTION_DIRECTORY=str(ROOT),
+            GITHUB_STEP_SUMMARY=str(self.root / "summary"),
+            GITHUB_PATH=str(self.path_file),
+            ASSETS=str(self.assets),
+            DOWNLOADS=str(self.root / "downloads"),
+            INVOCATION=str(self.root / "invocation"),
+        )
         curl = self.tools / "curl"
-        curl.write_text('#!/bin/bash\nset -eu\nurl="${@: -3:1}"\nprintf "%s\\n" "$url" >> "$DOWNLOADS"\ncp "$ASSETS/${url##*/}" "${@: -1}"\n')
+        curl.write_text(
+            '#!/bin/bash\nset -eu\nurl="${@: -3:1}"\nprintf "%s\\n" "$url" >> "$DOWNLOADS"\ncp "$ASSETS/${url##*/}" "${@: -1}"\n'
+        )
         curl.chmod(0o755)
         self.archive("x86_64-unknown-linux-gnu")
 
@@ -47,8 +61,7 @@ class ActionTests(unittest.TestCase):
         (self.assets / "SHA256SUMS").write_text(f"{digest}  {name}.tar.gz\n")
 
     def install(self, **env):
-        return subprocess.run(["bash", str(ROOT / "scripts/install.sh")],
-                              env=dict(self.env, **env), capture_output=True, text=True)
+        return subprocess.run(["bash", str(ROOT / "scripts/install.sh")], env=dict(self.env, **env), capture_output=True, text=True)
 
     def test_install_only_exports_path_without_execution(self):
         result = self.install()
@@ -58,9 +71,12 @@ class ActionTests(unittest.TestCase):
         self.assertFalse((self.root / "invocation").exists())
         self.assertFalse(list(self.root.glob("please-download.*")))
         # A new process consumes GITHUB_PATH, as a subsequent workflow step does.
-        result = subprocess.run(["bash", "-c", "command -v please"],
-                                env=dict(self.env, PATH=str(installed.parent) + os.pathsep + self.env["PATH"]),
-                                capture_output=True, text=True)
+        result = subprocess.run(
+            ["bash", "-c", "command -v please"],
+            env=dict(self.env, PATH=str(installed.parent) + os.pathsep + self.env["PATH"]),
+            capture_output=True,
+            text=True,
+        )
         self.assertEqual(result.stdout.strip(), str(installed))
 
     def test_execution_point_is_one_argument_and_status_is_preserved(self):
@@ -68,15 +84,28 @@ class ActionTests(unittest.TestCase):
         metadata = (ROOT / "action.yml").read_text()
         self.assertIn("if: inputs.run == 'true'", metadata)
         command = metadata.split("      run: ")[-1].strip()
-        for point, status in (("check", 0), ("custom", 0),
-                              ("check", 1), ("custom", 2), ("custom", 7),
-                              ('custom point; $(touch unexpected)', 2)):
+        for point, status in (
+            ("check", 0),
+            ("custom", 0),
+            ("check", 1),
+            ("custom", 2),
+            ("custom", 7),
+            ("custom point; $(touch unexpected)", 2),
+        ):
             with self.subTest(point=point, status=status):
                 invocation = self.root / "invocation"
-                result = subprocess.run(["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", command],
-                                        env=dict(self.env, PATH=self.path_file.read_text().strip() + os.pathsep + self.env["PATH"],
-                                                 PLEASE_EXECUTION_POINT_INPUT=point, RESULT=str(status)),
-                                        cwd=self.root, capture_output=True, text=True)
+                result = subprocess.run(
+                    ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", command],
+                    env=dict(
+                        self.env,
+                        PATH=self.path_file.read_text().strip() + os.pathsep + self.env["PATH"],
+                        PLEASE_EXECUTION_POINT_INPUT=point,
+                        RESULT=str(status),
+                    ),
+                    cwd=self.root,
+                    capture_output=True,
+                    text=True,
+                )
                 self.assertEqual(result.returncode, status, result.stderr)
                 self.assertEqual(invocation.read_text().splitlines(), ["run", "--at", point])
                 self.assertFalse((self.root / "unexpected").exists())
@@ -121,8 +150,10 @@ class ActionTests(unittest.TestCase):
         result = self.install(PLEASE_VERSION="v2.3.4", PLEASE_RUN="true")
         self.assertEqual(result.returncode, 0, result.stderr)
         base = "https://github.com/please-behave/cli/releases/download/v2.3.4"
-        self.assertEqual((self.root / "downloads").read_text().splitlines(), [
-            f"{base}/please-v2.3.4-x86_64-unknown-linux-gnu.tar.gz", f"{base}/SHA256SUMS"])
+        self.assertEqual(
+            (self.root / "downloads").read_text().splitlines(),
+            [f"{base}/please-v2.3.4-x86_64-unknown-linux-gnu.tar.gz", f"{base}/SHA256SUMS"],
+        )
         self.assertFalse((self.root / "invocation").exists())
 
     def test_missing_or_symlink_executable_is_rejected(self):
@@ -145,12 +176,26 @@ class ActionTests(unittest.TestCase):
         self.assertFalse(list(self.root.glob("please-download.*")))
 
     def test_invalid_inputs_and_platforms_fail_before_installation(self):
-        for env in ({"PLEASE_VERSION": ""}, {"PLEASE_VERSION": "latest"},
-                    {"PLEASE_VERSION": "v1.2.3;echo injected"},
-                    {"PLEASE_VERSION": "v01.2.3"}, {"PLEASE_VERSION": "v1.2.3-rc.1"}, {"PLEASE_RUN": "yes"},
-                    {"PLEASE_SUMMARY": "yes"}, {"PLEASE_SUMMARY": "True"}, {"PLEASE_SUMMARY": ""},
-                    {"PLEASE_INSTALL": "yes"}, {"PLEASE_INSTALL": ""}, {"PLEASE_SYNC": "yes"}, {"PLEASE_SYNC": ""}, {"PLEASE_CHECKS_ONLY": "yes"}, {"PLEASE_CHECKS_ONLY": "True"}, {"PLEASE_CHECKS_ONLY": ""},
-                    {"RUNNER_OS": "Windows"}, {"RUNNER_ARCH": "other"}):
+        for env in (
+            {"PLEASE_VERSION": ""},
+            {"PLEASE_VERSION": "latest"},
+            {"PLEASE_VERSION": "v1.2.3;echo injected"},
+            {"PLEASE_VERSION": "v01.2.3"},
+            {"PLEASE_VERSION": "v1.2.3-rc.1"},
+            {"PLEASE_RUN": "yes"},
+            {"PLEASE_SUMMARY": "yes"},
+            {"PLEASE_SUMMARY": "True"},
+            {"PLEASE_SUMMARY": ""},
+            {"PLEASE_INSTALL": "yes"},
+            {"PLEASE_INSTALL": ""},
+            {"PLEASE_SYNC": "yes"},
+            {"PLEASE_SYNC": ""},
+            {"PLEASE_CHECKS_ONLY": "yes"},
+            {"PLEASE_CHECKS_ONLY": "True"},
+            {"PLEASE_CHECKS_ONLY": ""},
+            {"RUNNER_OS": "Windows"},
+            {"RUNNER_ARCH": "other"},
+        ):
             with self.subTest(env=env):
                 result = self.install(**env)
                 self.assertNotEqual(result.returncode, 0)
@@ -160,8 +205,7 @@ class ActionTests(unittest.TestCase):
 
     def test_download_and_checksum_failures_do_not_export_path(self):
         valid = (self.assets / "SHA256SUMS").read_text()
-        for sums in ("", valid * 2, valid.replace("x86_64", "wrong"),
-                     "0" * 64 + "  please-v1.2.3-x86_64-unknown-linux-gnu.tar.gz\n"):
+        for sums in ("", valid * 2, valid.replace("x86_64", "wrong"), "0" * 64 + "  please-v1.2.3-x86_64-unknown-linux-gnu.tar.gz\n"):
             (self.assets / "SHA256SUMS").write_text(sums)
             result = self.install()
             self.assertNotEqual(result.returncode, 0)

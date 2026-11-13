@@ -1,4 +1,5 @@
 """Offline per-invocation report isolation, rendering and exit-code regressions."""
+
 import copy
 import importlib.util
 import json
@@ -25,33 +26,55 @@ class SummaryTests(unittest.TestCase):
         self.output = self.root / "summary.md"
         self.fixture = self.root / "fixture.json"
         tool = self.root / "please"
-        tool.write_text('#!/bin/sh\nprintf "%s\\n" "$@" >> "$INVOCATIONS"\n'
-                        'if [ -f "$FIXTURE" ]; then cp "$FIXTURE" .please/reports/last.json; fi\n'
-                        'exit "${RESULT:-0}"\n')
+        tool.write_text(
+            '#!/bin/sh\nprintf "%s\\n" "$@" >> "$INVOCATIONS"\n'
+            'if [ -f "$FIXTURE" ]; then cp "$FIXTURE" .please/reports/last.json; fi\n'
+            'exit "${RESULT:-0}"\n'
+        )
         tool.chmod(0o755)
-        self.env = dict(os.environ, PATH=str(self.root) + os.pathsep + os.environ["PATH"],
-                        GITHUB_EVENT_NAME="", ACTION_DIRECTORY=str(ROOT), PLEASE_SUMMARY="true",
-                        PLEASE_EXECUTION_POINT_INPUT="check", GITHUB_STEP_SUMMARY=str(self.output),
-                        FIXTURE=str(self.fixture), INVOCATIONS=str(self.root / "invocations"))
-        self.report = {"schema_version": 4, "repository": str(self.root.resolve()), "overall": "PASS",
-                       "plan": {"plan_schema_version": 3, "at": "check", "scheduled": []}, "results": []}
+        self.env = dict(
+            os.environ,
+            PATH=str(self.root) + os.pathsep + os.environ["PATH"],
+            GITHUB_EVENT_NAME="",
+            ACTION_DIRECTORY=str(ROOT),
+            PLEASE_SUMMARY="true",
+            PLEASE_EXECUTION_POINT_INPUT="check",
+            GITHUB_STEP_SUMMARY=str(self.output),
+            FIXTURE=str(self.fixture),
+            INVOCATIONS=str(self.root / "invocations"),
+        )
+        self.report = {
+            "schema_version": 4,
+            "repository": str(self.root.resolve()),
+            "overall": "PASS",
+            "plan": {"plan_schema_version": 3, "at": "check", "scheduled": []},
+            "results": [],
+        }
         for i, status in enumerate(("PASS", "FAIL", "ERROR", "NOT_RUN", "CANCELLED")):
-            self.report["plan"]["scheduled"].append(dict(id=f"rule-{i}", name="Same name", kind="check",
-                                                          description=f"Description {i}", blocking=i != 1))
-            self.report["results"].insert(0, dict(id=f"rule-{i}", kind="check", status=status,
-                                                  blocking=i != 1, duration_ms=i * 123, reason=""))
+            self.report["plan"]["scheduled"].append(
+                dict(id=f"rule-{i}", name="Same name", kind="check", description=f"Description {i}", blocking=i != 1)
+            )
+            self.report["results"].insert(
+                0, dict(id=f"rule-{i}", kind="check", status=status, blocking=i != 1, duration_ms=i * 123, reason="")
+            )
         self.report["overall"] = "ERROR"
 
     def run_action(self, code=0, **env):
-        return subprocess.run(["bash", str(ROOT / "scripts/run.sh")], cwd=self.root,
-                              env=dict(self.env, RESULT=str(code), **env), capture_output=True, text=True)
+        return subprocess.run(
+            ["bash", str(ROOT / "scripts/run.sh")],
+            cwd=self.root,
+            env=dict(self.env, RESULT=str(code), **env),
+            capture_output=True,
+            text=True,
+        )
 
     def save(self, report=None):
         self.fixture.write_text(json.dumps(self.report if report is None else report))
 
     def test_plan_order_statuses_names_descriptions_and_integrity(self):
-        self.report["results"].append(dict(id="please-snapshot", kind="integrity", status="ERROR",
-                                           blocking=True, duration_ms=0, reason="Incomplete <snapshot>"))
+        self.report["results"].append(
+            dict(id="please-snapshot", kind="integrity", status="ERROR", blocking=True, duration_ms=0, reason="Incomplete <snapshot>")
+        )
         self.save()
         result = self.run_action(2)
         self.assertEqual(result.returncode, 2, result.stderr)
@@ -59,8 +82,8 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("**ERROR**", text)
         self.assertIn("Total CLI execution duration:", text)
         for i, status in enumerate(("PASS", "FAIL", "ERROR", "NOT_RUN", "CANCELLED")):
-            self.assertIn(f"| {i+1}/5 | {status}", text)
-            self.assertIn(f"Description {i} | {i*123} ms", text)
+            self.assertIn(f"| {i + 1}/5 | {status}", text)
+            self.assertIn(f"Description {i} | {i * 123} ms", text)
         self.assertIn("FAIL (non-blocking)", text)
         self.assertLess(text.index("Description 0"), text.index("Description 4"))
         self.assertIn("| 1/5 | PASS | Same name |", text)
@@ -77,11 +100,13 @@ class SummaryTests(unittest.TestCase):
                 with self.subTest(summary=enabled, code=code):
                     (self.root / "invocations").unlink(missing_ok=True)
                     self.output.unlink(missing_ok=True)
-                    result = self.run_action(code, PLEASE_CHECKS_ONLY="true", PLEASE_SUMMARY=enabled,
-                                             PLEASE_EXECUTION_POINT_INPUT="release-candidate")
+                    result = self.run_action(
+                        code, PLEASE_CHECKS_ONLY="true", PLEASE_SUMMARY=enabled, PLEASE_EXECUTION_POINT_INPUT="release-candidate"
+                    )
                     self.assertEqual(result.returncode, code, result.stderr)
-                    self.assertEqual((self.root / "invocations").read_text().splitlines(),
-                                     ["run", "--at", "release-candidate", "--checks-only"])
+                    self.assertEqual(
+                        (self.root / "invocations").read_text().splitlines(), ["run", "--at", "release-candidate", "--checks-only"]
+                    )
                     self.assertEqual(self.output.exists(), enabled == "true")
                     if enabled == "true":
                         self.assertIn("Please Behave — release&#45;candidate", self.output.read_text())
@@ -121,10 +146,12 @@ class SummaryTests(unittest.TestCase):
         rule = self.report["plan"]["scheduled"][1]
         rule.update(kind="review", name="Project guidance")
         result = next(item for item in self.report["results"] if item["id"] == rule["id"])
-        result.update(kind="review", reason="Needs <clearer> guidance", findings=[
-            dict(path="GUIDANCE.md", line=12, message="[unsafe](https://example.com) <img>")])
-        self.report["plan"]["omitted"] = [dict(rule=dict(id="other", kind="review", name="Other review"),
-                                                  reason="trigger_not_matched")]
+        result.update(
+            kind="review",
+            reason="Needs <clearer> guidance",
+            findings=[dict(path="GUIDANCE.md", line=12, message="[unsafe](https://example.com) <img>")],
+        )
+        self.report["plan"]["omitted"] = [dict(rule=dict(id="other", kind="review", name="Other review"), reason="trigger_not_matched")]
         for status in ("PASS", "FAIL", "ERROR", "NOT_RUN", "CANCELLED"):
             with self.subTest(status=status):
                 result["status"] = status
@@ -204,8 +231,7 @@ class SummaryTests(unittest.TestCase):
                 self.assertNotIn("| Plan |", self.output.read_text())
 
     def test_empty_plan_and_unsuccessful_exit_cannot_claim_success(self):
-        self.save({**self.report, "overall": "PASS", "results": [],
-                   "plan": {"plan_schema_version": 3, "at": "check", "scheduled": []}})
+        self.save({**self.report, "overall": "PASS", "results": [], "plan": {"plan_schema_version": 3, "at": "check", "scheduled": []}})
         self.assertEqual(self.run_action(2).returncode, 2)
         text = self.output.read_text()
         self.assertIn("No rules were scheduled", text)

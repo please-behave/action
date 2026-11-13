@@ -1,4 +1,5 @@
 """Offline tests of the hosted E2E result verifier, run through Please Behave."""
+
 import importlib.util
 import itertools
 from pathlib import Path
@@ -20,7 +21,8 @@ class ActionE2ETests(unittest.TestCase):
             (self.root / f"{point}.md").write_text(
                 f"## Please Behave — {point.replace('-', '&#45;')}\n"
                 f"CLI aggregate outcome: **{status}**. CLI exit code: **{code}**.\n"
-                "| 1/1 | Hosted composite summary acceptance |\n")
+                "| 1/1 | Hosted composite summary acceptance |\n"
+            )
 
     def test_only_expected_raw_and_effective_outcomes_pass(self):
         expected = ("success", "success", "failure", "success")
@@ -35,10 +37,14 @@ class ActionE2ETests(unittest.TestCase):
     def test_missing_or_incorrect_summary_fails(self):
         file = self.root / "summary-second.md"
         original = file.read_text()
-        for before, after in (("**FAIL**", "**PASS**"), ("**1**", "**2**"),
-                              ("| 1/1 |", ""), ("Hosted composite summary acceptance", ""),
-                              ("summary&#45;second", "summary&#45;first"),
-                              ("## Please Behave", "## Please Behave\n## Please Behave")):
+        for before, after in (
+            ("**FAIL**", "**PASS**"),
+            ("**1**", "**2**"),
+            ("| 1/1 |", ""),
+            ("Hosted composite summary acceptance", ""),
+            ("summary&#45;second", "summary&#45;first"),
+            ("## Please Behave", "## Please Behave\n## Please Behave"),
+        ):
             with self.subTest(before=before):
                 file.write_text(original.replace(before, after))
                 with self.assertRaises(ValueError):

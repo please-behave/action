@@ -1,4 +1,5 @@
 """Run the unit tests of the Action scripts, the workflow scripts and every rule directory."""
+
 import sys
 import unittest
 from pathlib import Path

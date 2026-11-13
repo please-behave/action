@@ -1,4 +1,5 @@
 """Offline tests for publication readiness guards."""
+
 import copy
 import importlib.util
 from pathlib import Path
@@ -13,12 +14,21 @@ spec.loader.exec_module(readiness)
 
 class ReleaseReadyTests(unittest.TestCase):
     def setUp(self):
-        self.release = dict(tag_name="v0.1.0", draft=False, prerelease=False, assets=[
-            dict(name=name, state="uploaded", size=1) for name in (
-                "SHA256SUMS", "please-v0.1.0-x86_64-unknown-linux-gnu.tar.gz",
-                "please-v0.1.0-aarch64-unknown-linux-gnu.tar.gz",
-                "please-v0.1.0-x86_64-apple-darwin.tar.gz",
-                "please-v0.1.0-aarch64-apple-darwin.tar.gz")])
+        self.release = dict(
+            tag_name="v0.1.0",
+            draft=False,
+            prerelease=False,
+            assets=[
+                dict(name=name, state="uploaded", size=1)
+                for name in (
+                    "SHA256SUMS",
+                    "please-v0.1.0-x86_64-unknown-linux-gnu.tar.gz",
+                    "please-v0.1.0-aarch64-unknown-linux-gnu.tar.gz",
+                    "please-v0.1.0-x86_64-apple-darwin.tar.gz",
+                    "please-v0.1.0-aarch64-apple-darwin.tar.gz",
+                )
+            ],
+        )
 
     def verify(self, **changes):
         args = dict(release=self.release, version="v0.1.0")
@@ -41,11 +51,11 @@ class ReleaseReadyTests(unittest.TestCase):
                     self.verify(release=release)
 
     def test_main_queries_only_the_public_cli_release(self):
-        with patch.object(readiness.Path, "read_text", return_value='[tools]\n"github:please-behave/cli" = "0.1.0"\n'), \
-                patch.object(readiness, "gh", side_effect=[
-                    self.release]) as gh, \
-                patch("builtins.print") as output:
+        with (
+            patch.object(readiness.Path, "read_text", return_value='[tools]\n"github:please-behave/cli" = "0.1.0"\n'),
+            patch.object(readiness, "gh", side_effect=[self.release]) as gh,
+            patch("builtins.print") as output,
+        ):
             readiness.main()
-        self.assertEqual(gh.call_args_list, [
-            call("api", "repos/please-behave/cli/releases/tags/v0.1.0")])
+        self.assertEqual(gh.call_args_list, [call("api", "repos/please-behave/cli/releases/tags/v0.1.0")])
         output.assert_called_once_with("Public stable CLI release assets confirmed.")

@@ -1,4 +1,5 @@
 """Offline GitHub comparison-base tests with real local Git history."""
+
 import json
 import os
 from pathlib import Path
@@ -14,10 +15,17 @@ class ChangeBaseTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1",
-                        ACTION_DIRECTORY=str(ROOT), PLEASE_EXECUTION_POINT_INPUT="check",
-                        PLEASE_SUMMARY="false", PLEASE_CHECKS_ONLY="false", PLEASE_CHANGE_BASE="",
-                        GITHUB_EVENT_PATH=str(self.root / "event.json"))
+        self.env = dict(
+            os.environ,
+            GIT_CONFIG_GLOBAL=os.devnull,
+            GIT_CONFIG_NOSYSTEM="1",
+            ACTION_DIRECTORY=str(ROOT),
+            PLEASE_EXECUTION_POINT_INPUT="check",
+            PLEASE_SUMMARY="false",
+            PLEASE_CHECKS_ONLY="false",
+            PLEASE_CHANGE_BASE="",
+            GITHUB_EVENT_PATH=str(self.root / "event.json"),
+        )
         self.git("init", "--quiet", "-b", "main")
         self.git("config", "user.name", "Fixture")
         self.git("config", "user.email", "fixture@example.com")
@@ -29,8 +37,7 @@ class ChangeBaseTests(unittest.TestCase):
         self.git("commit", "--quiet", "--allow-empty", "-m", "feature change")
         self.feature = self.git("rev-parse", "HEAD")
         tool = self.root / "please"
-        tool.write_text('#!/bin/sh\nprintf "%s\\n" "$PLEASE_CHANGE_BASE" > observed-base\n'
-                        'printf "%s\\n" "$@" > invocation\nexit 7\n')
+        tool.write_text('#!/bin/sh\nprintf "%s\\n" "$PLEASE_CHANGE_BASE" > observed-base\nprintf "%s\\n" "$@" > invocation\nexit 7\n')
         tool.chmod(0o755)
         self.env["PATH"] = str(self.root) + os.pathsep + self.env["PATH"]
 
@@ -40,14 +47,18 @@ class ChangeBaseTests(unittest.TestCase):
     def run_action(self, event, payload, **env):
         (self.root / "event.json").write_text(json.dumps(payload))
         (self.root / "invocation").unlink(missing_ok=True)
-        return subprocess.run(["bash", str(ROOT / "scripts/run.sh")], cwd=self.root,
-                              env=dict(self.env, GITHUB_EVENT_NAME=event, **env), capture_output=True, text=True)
+        return subprocess.run(
+            ["bash", str(ROOT / "scripts/run.sh")],
+            cwd=self.root,
+            env=dict(self.env, GITHUB_EVENT_NAME=event, **env),
+            capture_output=True,
+            text=True,
+        )
 
     def test_push_pr_merge_base_and_dispatch_are_invocation_local(self):
         for event, payload, expected in (
             ("push", {"before": self.main}, self.main),
-            ("pull_request", {"pull_request": {"base": {"sha": self.main},
-                                                "head": {"sha": self.feature}}}, self.initial),
+            ("pull_request", {"pull_request": {"base": {"sha": self.main}, "head": {"sha": self.feature}}}, self.initial),
             ("workflow_dispatch", {}, self.feature),
         ):
             with self.subTest(event=event):
@@ -57,8 +68,7 @@ class ChangeBaseTests(unittest.TestCase):
                 self.assertEqual((self.root / "invocation").read_text().splitlines(), ["run", "--at", "check"])
 
     def test_override_and_checks_only_do_not_need_event_history(self):
-        for env, expected in ((dict(PLEASE_CHANGE_BASE="explicit-base"), "explicit-base"),
-                              (dict(PLEASE_CHECKS_ONLY="true"), "")):
+        for env, expected in ((dict(PLEASE_CHANGE_BASE="explicit-base"), "explicit-base"), (dict(PLEASE_CHECKS_ONLY="true"), "")):
             result = self.run_action("push", {}, **env)
             self.assertEqual(result.returncode, 7, result.stderr)
             self.assertEqual((self.root / "observed-base").read_text().strip(), expected)

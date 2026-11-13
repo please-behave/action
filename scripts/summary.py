@@ -1,4 +1,5 @@
 """Run the CLI once and append a bounded, per-invocation GitHub summary."""
+
 import html
 import json
 import os
@@ -25,8 +26,7 @@ def escape(value):
         value = value[:512] + "… [truncated]"
     value = " ".join(value.split())
     # Encode punctuation as entities so Markdown, HTML, links and mentions are inert.
-    return "".join(html.escape(c, quote=True) if c.isalnum() or c == " "
-                   else f"&#{ord(c)};" for c in value)
+    return "".join(html.escape(c, quote=True) if c.isalnum() or c == " " else f"&#{ord(c)};" for c in value)
 
 
 def require(condition, message):
@@ -36,11 +36,15 @@ def require(condition, message):
 
 def validate(report, point):
     require(isinstance(report, dict), "report must be an object")
-    require(type(report.get("schema_version")) is int and report["schema_version"] == 4,
-            "unsupported report schema (expected 4); select a compatible CLI release")
+    require(
+        type(report.get("schema_version")) is int and report["schema_version"] == 4,
+        "unsupported report schema (expected 4); select a compatible CLI release",
+    )
     plan = report.get("plan")
-    require(isinstance(plan, dict) and type(plan.get("plan_schema_version")) is int
-            and plan["plan_schema_version"] == 3, "unsupported plan schema (expected 3)")
+    require(
+        isinstance(plan, dict) and type(plan.get("plan_schema_version")) is int and plan["plan_schema_version"] == 3,
+        "unsupported plan schema (expected 3)",
+    )
     require(plan.get("at") == point, "report execution point does not match this invocation")
     require(report.get("repository") == str(Path.cwd().resolve()), "report repository does not match")
     require(report.get("overall") in {"PASS", "FAIL", "ERROR"}, "invalid aggregate outcome")
@@ -50,30 +54,38 @@ def validate(report, point):
     for rule in rules:
         require(isinstance(rule, dict), "invalid scheduled rule")
         identity = rule.get("id")
-        require(isinstance(identity, str) and identity and identity not in scheduled,
-                "missing or duplicate scheduled rule identity")
-        require(rule.get("kind") in {"check", "review"}
-                and isinstance(rule.get("description"), str)
-                and (rule.get("name") is None or isinstance(rule["name"], str))
-                and type(rule.get("blocking")) is bool, "invalid scheduled rule metadata")
+        require(isinstance(identity, str) and identity and identity not in scheduled, "missing or duplicate scheduled rule identity")
+        require(
+            rule.get("kind") in {"check", "review"}
+            and isinstance(rule.get("description"), str)
+            and (rule.get("name") is None or isinstance(rule["name"], str))
+            and type(rule.get("blocking")) is bool,
+            "invalid scheduled rule metadata",
+        )
         scheduled[identity] = rule
     matched, integrity = {}, []
     for result in results:
         require(isinstance(result, dict), "invalid result")
         identity = result.get("id")
         require(isinstance(identity, str) and identity, "missing result identity")
-        require(result.get("status") in STATUSES and type(result.get("blocking")) is bool
-                and type(result.get("duration_ms")) is int and result["duration_ms"] >= 0
-                and isinstance(result.get("reason"), str), "invalid result metadata")
+        require(
+            result.get("status") in STATUSES
+            and type(result.get("blocking")) is bool
+            and type(result.get("duration_ms")) is int
+            and result["duration_ms"] >= 0
+            and isinstance(result.get("reason"), str),
+            "invalid result metadata",
+        )
         if result.get("kind") == "integrity":
-            require(identity not in scheduled and identity not in {r["id"] for r in integrity},
-                    "duplicate integrity identity")
+            require(identity not in scheduled and identity not in {r["id"] for r in integrity}, "duplicate integrity identity")
             integrity.append(result)
         else:
             require(identity in scheduled and identity not in matched, "unexpected or duplicate rule result")
             rule = scheduled[identity]
-            require(result.get("kind") == rule["kind"] and result["blocking"] == rule["blocking"],
-                    "result does not correspond to scheduled rule")
+            require(
+                result.get("kind") == rule["kind"] and result["blocking"] == rule["blocking"],
+                "result does not correspond to scheduled rule",
+            )
             matched[identity] = result
     require(set(matched) == set(scheduled), "incomplete scheduled rule results")
     return rules, matched, integrity
@@ -81,23 +93,26 @@ def validate(report, point):
 
 def render(report, point, code, elapsed):
     rules, results, integrity = validate(report, point)
-    lines = [f"\n## Please Behave — {escape(point)}\n\n",
-             f"CLI aggregate outcome: **{report['overall']}**. CLI exit code: **{code}**.\n\n",
-             f"Total CLI execution duration: {elapsed:.3f} s (wall clock).\n\n"]
+    lines = [
+        f"\n## Please Behave — {escape(point)}\n\n",
+        f"CLI aggregate outcome: **{report['overall']}**. CLI exit code: **{code}**.\n\n",
+        f"Total CLI execution duration: {elapsed:.3f} s (wall clock).\n\n",
+    ]
     if code != 0:
         lines.append("**Invocation exited unsuccessfully.** The saved CLI aggregate outcome is shown above.\n\n")
     if not rules:
         lines.append("No rules were scheduled for this execution point.\n\n")
     else:
-        lines.append("| Plan | Status | Rule name | Description | Duration |\n"
-                     "| --- | --- | --- | --- | --- |\n")
+        lines.append("| Plan | Status | Rule name | Description | Duration |\n| --- | --- | --- | --- | --- |\n")
         for index, rule in enumerate(rules, 1):
             result = results[rule["id"]]
             enforcement = "" if rule["blocking"] else " (non-blocking)"
             name = rule.get("name") or rule["id"].rsplit(":", 1)[-1]
-            lines.append(f"| {index}/{len(rules)} | {result['status']}{enforcement} | "
-                         f"{escape(name)} | {escape(rule['description'])} | "
-                         f"{result['duration_ms']} ms |\n")
+            lines.append(
+                f"| {index}/{len(rules)} | {result['status']}{enforcement} | "
+                f"{escape(name)} | {escape(rule['description'])} | "
+                f"{result['duration_ms']} ms |\n"
+            )
         lines.append("\nNon-blocking results do not replace the CLI aggregate outcome; configuration errors can still block.\n\n")
     reviews = [rule for rule in rules if rule["kind"] == "review"]
     if reviews:
@@ -109,8 +124,7 @@ def render(report, point, code, elapsed):
             findings = result.get("findings", [])
             require(isinstance(findings, list), "invalid review findings")
             for finding in findings[:20]:
-                require(isinstance(finding, dict) and isinstance(finding.get("message"), str),
-                        "invalid review finding")
+                require(isinstance(finding, dict) and isinstance(finding.get("message"), str), "invalid review finding")
                 location = finding.get("path") or "No source location"
                 if finding.get("line") is not None:
                     location = f"{location}:{finding['line']}"
@@ -184,8 +198,7 @@ def main():
     try:
         try:
             require(isolated, diagnostic)
-            require(not slot.parent.parent.is_symlink() and not slot.parent.is_symlink(),
-                    "current report directory is symlinked")
+            require(not slot.parent.parent.is_symlink() and not slot.parent.is_symlink(), "current report directory is symlinked")
             require(not slot.is_symlink() and slot.is_file(), "current invocation produced no regular report")
             with slot.open("rb") as stream:
                 data = stream.read(REPORT_BYTES + 1)
@@ -193,8 +206,7 @@ def main():
             lines = render(json.loads(data), point, code, elapsed)
         except (OSError, ValueError, TypeError, KeyError, RecursionError) as error:
             warning(f"{error}; inspect CLI logs and .please/reports/last.json")
-            lines = [f"\n## Please Behave — {escape(point)}\n\n",
-                     f"CLI exit code: **{code}**. Summary unavailable: {escape(error)}.\n"]
+            lines = [f"\n## Please Behave — {escape(point)}\n\n", f"CLI exit code: **{code}**. Summary unavailable: {escape(error)}.\n"]
         append_summary(lines)
     except Exception as error:
         warning(f"could not append GITHUB_STEP_SUMMARY: {error}; inspect CLI logs/report")

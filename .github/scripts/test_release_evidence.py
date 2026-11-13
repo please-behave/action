@@ -1,4 +1,5 @@
 """Offline candidate evidence checks without installing or invoking governance."""
+
 import importlib.util
 import json
 import os
@@ -20,10 +21,15 @@ class ReleaseEvidenceTests(unittest.TestCase):
         self.root = Path(temporary.name)
         self.head = "a" * 40
         self.policy = evidence.policy_from(ROOT / ".github/release-artifacts.json")
-        self.env = dict(EXPECTED_RELEASE_VERSION="1.3.0", GITHUB_SHA=self.head,
-                        GITHUB_REF="refs/heads/main", GITHUB_REPOSITORY="please-behave/action",
-                        GITHUB_WORKFLOW_REF="please-behave/action/.github/workflows/release.yml@refs/heads/main",
-                        GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="1")
+        self.env = dict(
+            EXPECTED_RELEASE_VERSION="1.3.0",
+            GITHUB_SHA=self.head,
+            GITHUB_REF="refs/heads/main",
+            GITHUB_REPOSITORY="please-behave/action",
+            GITHUB_WORKFLOW_REF="please-behave/action/.github/workflows/release.yml@refs/heads/main",
+            GITHUB_RUN_ID="123",
+            GITHUB_RUN_ATTEMPT="1",
+        )
         previous = Path.cwd()
         os.chdir(self.root)
         self.addCleanup(os.chdir, previous)
@@ -42,10 +48,16 @@ class ReleaseEvidenceTests(unittest.TestCase):
     def test_missing_extra_mismatched_or_modified_evidence_is_rejected(self):
         path = next((self.root / "release-evidence").iterdir())
         original = path.read_text()
-        for field, value in (("version", "9.9.9"), ("source_sha", "b" * 40),
-                             ("run_id", "456"), ("run_attempt", "2"),
-                             ("repository", "other/repository"), ("target", "other"),
-                             ("workflow", ".github/workflows/other.yml"), ("artifacts", {})):
+        for field, value in (
+            ("version", "9.9.9"),
+            ("source_sha", "b" * 40),
+            ("run_id", "456"),
+            ("run_attempt", "2"),
+            ("repository", "other/repository"),
+            ("target", "other"),
+            ("workflow", ".github/workflows/other.yml"),
+            ("artifacts", {}),
+        ):
             with self.subTest(field=field):
                 data = json.loads(original)
                 data[field] = value

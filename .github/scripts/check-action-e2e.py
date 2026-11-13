@@ -1,4 +1,5 @@
 """Verify real composite Action outcomes and captured step summaries."""
+
 import html
 import os
 from pathlib import Path
@@ -13,8 +14,7 @@ def verify(root, passing_outcome, passing_conclusion, failing_outcome, failing_c
         raise ValueError(f"Expected tolerated Action failure; got {failing_outcome}/{failing_conclusion}.")
     for point, outcome, code in (("summary-first", "PASS", 0), ("summary-second", "FAIL", 1)):
         text = (root / f"{point}.md").read_text()
-        expected = (f"— {point}", f"**{outcome}**", f"CLI exit code: **{code}**",
-                    "| 1/1 |", "Hosted composite summary acceptance")
+        expected = (f"— {point}", f"**{outcome}**", f"CLI exit code: **{code}**", "| 1/1 |", "Hosted composite summary acceptance")
         if text.count("## Please Behave") != 1 or not all(value in html.unescape(text) for value in expected):
             raise ValueError(f"Unexpected summary content for {point}:\n{text}")
         other = "summary-second" if point == "summary-first" else "summary-first"
@@ -24,9 +24,13 @@ def verify(root, passing_outcome, passing_conclusion, failing_outcome, failing_c
 
 if __name__ == "__main__":
     try:
-        verify(Path(os.environ["RUNNER_TEMP"]), os.environ["PASSING_OUTCOME"],
-               os.environ["PASSING_CONCLUSION"], os.environ["FAILING_OUTCOME"],
-               os.environ["FAILING_CONCLUSION"])
+        verify(
+            Path(os.environ["RUNNER_TEMP"]),
+            os.environ["PASSING_OUTCOME"],
+            os.environ["PASSING_CONCLUSION"],
+            os.environ["FAILING_OUTCOME"],
+            os.environ["FAILING_CONCLUSION"],
+        )
         print("Action E2E passed: success and expected failure observed; independent summaries verified.")
     except (OSError, ValueError, KeyError) as error:
         sys.exit(f"Action E2E failed: {error}")
