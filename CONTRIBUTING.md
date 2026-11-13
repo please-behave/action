@@ -25,8 +25,7 @@ Please Behave owns the repository's quality gates:
 | `check` | The same quality gates as `pre-push` plus the formatting checks, the AGENTS.md size check, the npm audit and the conditional AGENTS.md review, on the CI checkout |
 | `release` | Public stable CLI dependency and all four native assets |
 
-Commit and push to run validation through the installed hooks. `npm test`
-delegates to `please run --at pre-push`; it does not define a second test suite.
+Commit and push to run validation through the installed hooks.
 Coding agents use the Git hooks for validation. Inspect failures with
 `please status --details`, fix the cause and retry the Git operation.
 Keep new repository checks in `.please/` and reuse the configured external rules.
