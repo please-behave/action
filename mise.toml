@@ -5,11 +5,21 @@ python = "3.15.2"
 actionlint = "1.7.12"
 gitleaks = "8.30.1"
 shellcheck = "0.11.0"
+gh = "2.103.3"
+ruff = "0.17.4"
+shfmt = "3.14.1"
 
-[tasks."ci:prepare"]
-alias = "setup"
+[tasks.prepare]
 description = "Fetch locked npm dependencies for CI and offline Git hooks"
 run = "npm ci --ignore-scripts"
+
+[tasks.format]
+description = "Format Python and shell sources"
+run = ["ruff format", "git ls-files -z '*.sh' | xargs -0 shfmt -w"]
+
+[tasks.verify]
+description = "Run the deterministic Please Behave checks and stop at the first blocker"
+run = "please run --at pre-push --checks-only --fail-fast"
 
 [tasks.release]
 description = "Start the GitHub Release workflow for remote main"

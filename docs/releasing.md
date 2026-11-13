@@ -86,7 +86,7 @@ Acceptance criteria:
 
 Install development dependencies with `npm ci --ignore-scripts` (Node 26), the
 released governor pinned in `mise.toml`, and the tools listed in
-`mise.toml`. `mise run ci:prepare` fetches locked npm dependencies, and hook
+`mise.toml`. `mise prepare` fetches locked npm dependencies, and hook
 setup synchronizes imports explicitly. CI uses mise to install tools, then one
 published Action step to synchronize and execute `check` with summaries on both
 architectures. Release Readiness installs only Python and the governor, verifies

@@ -5,7 +5,7 @@ Run `mise trust` and `mise install` to prepare the exact Node, Python, ShellChec
 actionlint and Gitleaks versions in `mise.toml`. Bash and Git remain host prerequisites.
 Install the released Please Behave version pinned in `mise.toml`; never
 use a candidate CLI build as the governor. Prepare Node dependencies with
-`mise run ci:prepare`, then install managed Git hooks and synchronize the
+`mise prepare`, then install managed Git hooks and synchronize the
 pinned external rulesets with `mise exec -- please sync --yes`.
 Setup needs network access; pre-commit and pre-push use prepared dependencies offline.
 Use `mise exec -- please run --at pre-commit` or `mise exec -- please run --at pre-push`

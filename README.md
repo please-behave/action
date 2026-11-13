@@ -242,8 +242,9 @@ summaries and ordinary governance failure propagation.
 
 The repository uses the released CLI pinned in `mise.toml` to govern its
 own development through `.please/`. `mise install` installs the configured tools;
-`mise run ci:prepare` fetches locked npm dependencies without running checks.
-The `setup` task remains an alias. Python is exactly pinned in `mise.toml` for
+`mise prepare` fetches locked npm dependencies without running checks,
+`mise verify` runs the deterministic checks and stops at the first blocker and
+`mise format` formats Python and shell sources. Python is exactly pinned in `mise.toml` for
 local and CI scripts. CI invokes one published Action step with
 `install: 'false'` and `sync: 'true'` to run `check` with summaries on both
 supported architectures in its `Check` matrix job. Release reuses successful push
