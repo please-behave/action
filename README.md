@@ -242,7 +242,7 @@ summaries and ordinary governance failure propagation.
 
 The repository uses the released CLI pinned in `mise.toml` to govern its
 own development through `.please/`. `mise install` installs the configured tools;
-`mise prepare` fetches locked npm dependencies without running checks,
+`mise setup` fetches locked npm dependencies without running checks,
 `mise verify` runs the deterministic checks and stops at the first blocker and
 `mise format` rewrites Python and shell sources; the `format-python` and `format-shell` rules enforce
 them separately at `pre-commit` and `check`. Python is exactly pinned in `mise.toml` for

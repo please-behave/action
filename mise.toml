@@ -10,7 +10,7 @@ gh = "2.103.3"
 ruff = "0.17.4"
 shfmt = "3.14.1"
 
-[tasks.prepare]
+[tasks.setup]
 description = "Fetch locked npm dependencies for CI and offline Git hooks"
 run = "npm ci --ignore-scripts"
 
