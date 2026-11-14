@@ -14,7 +14,6 @@ cat >.please/checks/fixture/rule.toml <<'EOF'
 id = "fixture"
 description = "Hosted composite summary acceptance"
 run_at = ["summary-first", "summary-second"]
-blocking = true
 [check]
 command = "bash -c 'exit ${FIXTURE_RESULT:-0}'"
 EOF

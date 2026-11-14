@@ -2,7 +2,6 @@ id = "format-python"
 name = "Python formatting"
 description = "Python sources are formatted with Ruff"
 run_at = ["pre-commit", "check"]
-blocking = true
 
 [check]
 command = "ruff format --check"

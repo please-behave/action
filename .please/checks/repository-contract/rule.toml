@@ -2,7 +2,6 @@ id = "repository-contract"
 name = "Repository contract"
 description = "Action metadata and documentation agree with each other"
 run_at = ["pre-commit", "pre-push", "check"]
-blocking = true
 
 [check]
 command = "node @rule/check.mjs"
