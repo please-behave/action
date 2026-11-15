@@ -46,6 +46,15 @@ Commit-message validation runs only in the managed local `commit-msg` hook;
 CI checks neither history nor PR titles. This repository uses direct maintainer
 pushes to `main`, with dependency PRs from Renovate.
 
+The Statistics workflow runs on pushes to main and sends the README badge values
+to the central badges-and-stuff repository. Its `collect` job runs the tests in
+`tests/` with coverage.py (branch coverage of `scripts/`, subprocesses included),
+takes the test count from the unittest result and counts production lines
+(`scripts/` and `action.yml`) with the `scc` version pinned in `mise.toml`.
+`.github/scripts/write-*-metrics.py` write the metric files. The `publish` job
+alone uses the `STATISTICS_TOKEN` secret. The coverage.py version is pinned in
+the workflow.
+
 Renovate applies a minimum release age of seven days, or fourteen days for major
 updates. This is best effort: updates without a release timestamp may proceed.
 GitHub tag timestamps may not reflect republished content, and this policy does

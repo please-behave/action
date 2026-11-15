@@ -1,5 +1,9 @@
 # Please Behave Action
 
+[![build](https://github.com/please-behave/action/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/please-behave/action/actions/workflows/ci.yml) [![release](https://img.shields.io/github/v/release/please-behave/action?display_name=tag&sort=semver)](https://github.com/please-behave/action/releases) [![license](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-3949ab.svg)](LICENSE)
+
+[![tests](https://christianpflugradt.github.io/badges-and-stuff/please-behave-action/tests.svg)](https://christianpflugradt.github.io/badges-and-stuff/) [![coverage](https://christianpflugradt.github.io/badges-and-stuff/please-behave-action/coverage.svg)](https://christianpflugradt.github.io/badges-and-stuff/) [![LOC](https://christianpflugradt.github.io/badges-and-stuff/please-behave-action/loc.svg)](https://christianpflugradt.github.io/badges-and-stuff/)
+
 A lightweight composite GitHub Action that installs and invokes the
 [Please Behave CLI](https://github.com/please-behave/cli). The CLI evaluates
 repository rules; this Action provides installation, optional synchronization,

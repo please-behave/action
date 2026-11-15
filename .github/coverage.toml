@@ -1,0 +1,6 @@
+# Coverage settings for the Statistics workflow. Absolute paths keep the data of subprocess runs together.
+[tool.coverage.run]
+branch = true
+source = ["${GITHUB_WORKSPACE}/scripts"]
+data_file = "${GITHUB_WORKSPACE}/build/.coverage"
+patch = ["subprocess"]
