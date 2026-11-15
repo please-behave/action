@@ -37,13 +37,13 @@ def require(condition, message):
 def validate(report, point):
     require(isinstance(report, dict), "report must be an object")
     require(
-        type(report.get("schema_version")) is int and report["schema_version"] == 4,
-        "unsupported report schema (expected 4); select a compatible CLI release",
+        type(report.get("schema_version")) is int and report["schema_version"] == 1,
+        "unsupported report schema (expected 1); select a compatible CLI release",
     )
     plan = report.get("plan")
     require(
-        isinstance(plan, dict) and type(plan.get("plan_schema_version")) is int and plan["plan_schema_version"] == 3,
-        "unsupported plan schema (expected 3)",
+        isinstance(plan, dict) and type(plan.get("plan_schema_version")) is int and plan["plan_schema_version"] == 1,
+        "unsupported plan schema (expected 1)",
     )
     require(plan.get("at") == point, "report execution point does not match this invocation")
     require(report.get("repository") == str(Path.cwd().resolve()), "report repository does not match")

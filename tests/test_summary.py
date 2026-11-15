@@ -44,10 +44,10 @@ class SummaryTests(unittest.TestCase):
             INVOCATIONS=str(self.root / "invocations"),
         )
         self.report = {
-            "schema_version": 4,
+            "schema_version": 1,
             "repository": str(self.root.resolve()),
             "overall": "PASS",
-            "plan": {"plan_schema_version": 3, "at": "check", "scheduled": []},
+            "plan": {"plan_schema_version": 1, "at": "check", "scheduled": []},
             "results": [],
         }
         for i, status in enumerate(("PASS", "FAIL", "ERROR", "NOT_RUN", "CANCELLED")):
@@ -231,7 +231,7 @@ class SummaryTests(unittest.TestCase):
                 self.assertNotIn("| Plan |", self.output.read_text())
 
     def test_empty_plan_and_unsuccessful_exit_cannot_claim_success(self):
-        self.save({**self.report, "overall": "PASS", "results": [], "plan": {"plan_schema_version": 3, "at": "check", "scheduled": []}})
+        self.save({**self.report, "overall": "PASS", "results": [], "plan": {"plan_schema_version": 1, "at": "check", "scheduled": []}})
         self.assertEqual(self.run_action(2).returncode, 2)
         text = self.output.read_text()
         self.assertIn("No rules were scheduled", text)
