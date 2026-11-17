@@ -168,7 +168,7 @@ as not selected. NOT_RUN and ERROR remain visible without being relabeled as PAS
 All displayed review text is bounded and escaped; prompts and captured provider
 output are not included. This applies to every review, without project-specific scripts.
 
-The renderer supports report schema 1 and plan schema 1. It validates execution
+The renderer supports report and plan schema versions 0 and 1. It validates execution
 point, repository, rule identities, result correspondence and displayed metadata.
 Missing, malformed, incompatible or inconsistent reports produce a diagnostic
 instead of a rule table. A nonzero CLI exit is always displayed as unsuccessful,

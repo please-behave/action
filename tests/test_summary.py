@@ -71,6 +71,26 @@ class SummaryTests(unittest.TestCase):
     def save(self, report=None):
         self.fixture.write_text(json.dumps(self.report if report is None else report))
 
+    def test_zero_and_one_schemas_render_with_the_same_validation(self):
+        with patch.object(summary.Path, "cwd", return_value=self.root):
+            for report_version in (0, 1):
+                for plan_version in (0, 1):
+                    report = copy.deepcopy(self.report)
+                    report["schema_version"] = report_version
+                    report["plan"]["plan_schema_version"] = plan_version
+                    with self.subTest(report=report_version, plan=plan_version):
+                        self.assertIn("CLI aggregate outcome: **ERROR**", "".join(summary.render(report, "check", 2, 0.1)))
+                        report["results"].pop()
+                        with self.assertRaisesRegex(ValueError, "incomplete"):
+                            summary.validate(report, "check")
+            for field in ("schema_version", "plan_schema_version"):
+                for version in (True, False, -1, 2, 1.0, "0", None):
+                    report = copy.deepcopy(self.report)
+                    target = report if field == "schema_version" else report["plan"]
+                    target[field] = version
+                    with self.subTest(field=field, version=version), self.assertRaisesRegex(ValueError, "schema"):
+                        summary.validate(report, "check")
+
     def test_plan_order_statuses_names_descriptions_and_integrity(self):
         self.report["results"].append(
             dict(id="please-snapshot", kind="integrity", status="ERROR", blocking=True, duration_ms=0, reason="Incomplete <snapshot>")

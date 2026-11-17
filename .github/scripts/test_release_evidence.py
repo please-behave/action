@@ -40,6 +40,28 @@ class ReleaseEvidenceTests(unittest.TestCase):
         for target in self.policy["targets"]:
             evidence.record(self.policy, dict(self.env, RELEASE_TARGET=target), self.head)
 
+    def test_policy_and_evidence_accept_zero_and_one_without_weakening_identity(self):
+        path = Path("policy.json")
+        for version in (0, 1):
+            policy = dict(self.policy, schema_version=version)
+            path.write_text(json.dumps(policy))
+            self.assertEqual(evidence.policy_from(path), policy)
+            for target in self.policy["targets"]:
+                receipt = Path(f"release-evidence/{target}.json")
+                data = json.loads(receipt.read_text())
+                data["schema_version"] = version
+                receipt.write_text(json.dumps(data))
+            evidence.verify(policy, self.env, self.head)
+        receipt = next(Path("release-evidence").iterdir())
+        original = json.loads(receipt.read_text())
+        for version in (True, False, -1, 2, 1.0, "0", None):
+            path.write_text(json.dumps(dict(self.policy, schema_version=version)))
+            with self.subTest(policy=version), self.assertRaises(ValueError):
+                evidence.policy_from(path)
+            receipt.write_text(json.dumps(dict(original, schema_version=version)))
+            with self.subTest(evidence=version), self.assertRaises(ValueError):
+                evidence.verify(self.policy, self.env, self.head)
+
     def test_all_four_candidates_verify_without_running_governance(self):
         with patch.object(evidence.subprocess, "run", side_effect=AssertionError("No governance invocation")):
             evidence.verify(self.policy, self.env, self.head)
