@@ -66,6 +66,8 @@ class ReleaseEvidenceTests(unittest.TestCase):
         with patch.object(evidence.subprocess, "run", side_effect=AssertionError("No governance invocation")):
             evidence.verify(self.policy, self.env, self.head)
         self.assertFalse((self.root / ".git/hooks").exists())
+        for receipt in (self.root / "release-evidence").iterdir():
+            self.assertEqual(json.loads(receipt.read_text())["schema_version"], 0)
 
     def test_missing_extra_mismatched_or_modified_evidence_is_rejected(self):
         path = next((self.root / "release-evidence").iterdir())
