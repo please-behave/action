@@ -19,7 +19,7 @@ Please Behave owns the repository's quality gates:
 
 | Execution point | Checks |
 | --- | --- |
-| `pre-commit` | Repository metadata/documentation contracts, the `format-python` and `format-shell` checks and the imported AGENTS.md size check |
+| `pre-commit` | Repository metadata/documentation contracts, the `format-python` check and the imported `format-shell` and AGENTS.md size checks |
 | `commit-msg` | Imported Conventional Commits Check and advisory header wording Review |
 | `pre-push` | Offline Python tests, the repository contract, imported security, license, workflow and shell checks |
 | `check` | The same quality gates as `pre-push` plus the formatting checks, the AGENTS.md size check and the conditional AGENTS.md review, on the CI checkout |

@@ -248,7 +248,7 @@ The repository uses the released CLI pinned in `mise.toml` to govern its
 own development through `.please/`. `mise install` installs the configured tools;
 `mise setup` fetches locked npm dependencies without running checks,
 `mise verify` runs the deterministic checks and stops at the first blocker and
-`mise format` rewrites Python and shell sources; the `format-python` and `format-shell` rules enforce
+`mise format` rewrites Python and shell sources; the local `format-python` and the imported `format-shell` rules enforce
 them separately at `pre-commit` and `check`. Python is exactly pinned in `mise.toml` for
 local and CI scripts. CI invokes one published Action step with
 `install: 'false'` and `sync: 'true'` to run `check` with summaries on both
