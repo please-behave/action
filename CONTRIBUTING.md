@@ -65,7 +65,7 @@ validation, execution-point argument handling, exit-code propagation and
 install-only and preinstalled-CLI behavior using offline archives and the Action
 execution command. Comparison-base tests use local Git history without network
 services; generic summaries cover review findings and trigger omissions.
-Other Python tests cover repository contracts and release readiness guards.
+Other Python tests cover repository contracts and the pinned CLI release check.
 These checks run at `pre-push` and `check`; CI runs them on Linux x64 and ARM64.
 The independent Action E2E workflow runs the actual composite Action through
 `uses: ./` on Linux x64/ARM64 and macOS ARM64/Intel, with repeated invocations,

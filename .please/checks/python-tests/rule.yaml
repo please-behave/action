@@ -1,0 +1,24 @@
+purpose: >-
+  Run every Python unit test of the Action scripts, the workflow scripts and the local rules offline.
+problem: >-
+  Without the rule no Git hook runs these tests, so regressions in scripts that
+  the Action and the release depend on surface late.
+value: >-
+  One gate covers all test locations, and a new local rule with tests is picked up
+  without extra wiring.
+conditions:
+  - statement: The tests are discovered with unittest in tests, in .github/scripts and in every directory below .please/checks, and all of them pass.
+    rationale: These are the places where the repository keeps Python tests next to the code they test.
+success_criteria:
+  - A failing test fails the rule.
+  - A crash of the runner is an ERROR and never a verdict.
+out_of_scope:
+  - description: Tests of imported rules.
+  - description: Formatting of the test code.
+    owner: format-python
+limitations:
+  - A test location outside the three listed roots is not run until the runner names it.
+  - Only Python tests are run.
+placement: >-
+  Local, because the test framework follows this repository's technology stack and
+  the list of test locations describes only this repository's layout.

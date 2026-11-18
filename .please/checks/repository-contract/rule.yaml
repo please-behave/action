@@ -1,0 +1,42 @@
+purpose: >-
+  Keep the Action metadata, the package metadata, selected release workflow properties and the documentation links consistent with each other.
+problem: >-
+  The README is the contract with the users of the Action. A README that disagrees
+  with action.yml, a lockfile that disagrees with package.json, a release workflow
+  that loses a safety property or a dead documentation link would otherwise be found
+  only by users or during a release.
+value: >-
+  Contradictions between these files fail at commit time.
+conditions:
+  - statement: action.yml is a composite action with exactly the documented inputs and no outputs, and the README input table agrees with it on required and default.
+    rationale: The README documents the interface of the Action.
+  - statement: The lockfile agrees with package.json on name, license, engines and dev dependencies, and the README names the license of package.json.
+    rationale: The lockfile is the basis of the reproducible installation.
+  - statement: The release workflow is triggered only by manual dispatch.
+    rationale: Releases are started deliberately; this is stricter than the shared release-workflow rule, which also allows a schedule.
+  - statement: The jobs plan and publish may write contents, and release-readiness only reads contents and actions.
+    rationale: Each job holds only the permissions it needs.
+  - statement: plan and publish neither install the Please Behave action nor run please, and candidate evidence is verified before the release is published with the planned version.
+    rationale: Planning and publishing run without governance, and publication must use verified evidence.
+  - statement: The required jobs of the release CI policy equal the jobs of the CI matrix.
+    rationale: Release readiness must wait for every CI job.
+  - statement: Checkouts do not persist credentials in the CI and release workflows, and the Please Behave action runs after a checkout.
+    rationale: The action evaluates the checked-out repository.
+  - statement: Local links in the README, CONTRIBUTING.md and docs/releasing.md point to existing files.
+    rationale: Dead links mislead readers.
+success_criteria:
+  - Any contradiction fails and the message names it.
+  - A missing file or a parsing problem is an ERROR and never a verdict.
+out_of_scope:
+  - description: The structure of the release workflow.
+    owner: release-workflow
+  - description: Pinning of actions to commit hashes.
+    owner: workflow-action-pins
+  - description: Syntax of the workflows.
+    owner: workflow-syntax
+  - description: Whether the documentation content is correct.
+limitations:
+  - The rule needs js-yaml from the locked npm dependencies.
+  - It checks fixed structures, not their meaning.
+placement: >-
+  Local, because it verifies only the files and the release workflow of this repository.

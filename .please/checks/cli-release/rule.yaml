@@ -1,0 +1,23 @@
+purpose: >-
+  Make sure the Please Behave CLI release pinned in mise.toml is public, stable and ships all native assets.
+problem: >-
+  The Action installs the CLI from that release and verifies its checksums. A
+  draft, a prerelease or an incomplete release would break the Action for its users.
+value: >-
+  A release of the Action cannot point to a CLI release that users cannot install.
+conditions:
+  - statement: A release exists for the tag that matches the version pinned in mise.toml, and it is neither a draft nor a prerelease.
+    rationale: Only a public stable release can be installed by everyone.
+  - statement: SHA256SUMS and the archives for Linux and macOS on x86_64 and aarch64 are uploaded and not empty.
+    rationale: The Action verifies checksums and runs on these platforms.
+success_criteria:
+  - A missing, draft, prerelease or incomplete release fails.
+  - A failure of gh or the network is an ERROR and never a verdict.
+out_of_scope:
+  - description: Whether the checksums or the archive contents are correct.
+  - description: Whether the pinned version is the latest.
+limitations:
+  - The rule needs network access and an authenticated gh, and it runs only at the release execution point.
+  - It verifies that assets exist, not that they are intact.
+placement: >-
+  Local, because it concerns only this repository's dependency on the CLI it installs.
