@@ -1,4 +1,4 @@
-"""Offline tests for publication readiness guards."""
+"""Offline tests for the pinned CLI release check."""
 
 import copy
 import importlib.util
@@ -7,9 +7,9 @@ import unittest
 from unittest.mock import call, patch
 
 ROOT = Path(__file__).resolve().parents[3]
-spec = importlib.util.spec_from_file_location("readiness", ROOT / ".please/checks/cli-release/check.py")
-readiness = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(readiness)
+spec = importlib.util.spec_from_file_location("cli_release", ROOT / ".please/checks/cli-release/check.py")
+cli_release = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(cli_release)
 
 
 class ReleaseReadyTests(unittest.TestCase):
@@ -32,7 +32,7 @@ class ReleaseReadyTests(unittest.TestCase):
 
     def verify(self, **changes):
         args = dict(release=self.release, version="v0.1.0")
-        readiness.verify(**dict(args, **changes))
+        cli_release.verify(**dict(args, **changes))
 
     def test_ready_revision(self):
         self.verify()
@@ -52,10 +52,10 @@ class ReleaseReadyTests(unittest.TestCase):
 
     def test_main_queries_only_the_public_cli_release(self):
         with (
-            patch.object(readiness.Path, "read_text", return_value='[tools]\n"github:please-behave/cli" = "0.1.0"\n'),
-            patch.object(readiness, "gh", side_effect=[self.release]) as gh,
+            patch.object(cli_release.Path, "read_text", return_value='[tools]\n"github:please-behave/cli" = "0.1.0"\n'),
+            patch.object(cli_release, "gh", side_effect=[self.release]) as gh,
             patch("builtins.print") as output,
         ):
-            readiness.main()
+            cli_release.main()
         self.assertEqual(gh.call_args_list, [call("api", "repos/please-behave/cli/releases/tags/v0.1.0")])
         output.assert_called_once_with("Public stable CLI release assets confirmed.")
