@@ -256,7 +256,7 @@ supported architectures in its `Check` matrix job. Release reuses successful pus
 CI for the exact source and runs hosted Action tests as its four-platform Candidate
 matrix. Its synthetic fixture lives in `.github/scripts/prepare-action-e2e.sh`.
 Hosted tests run only during release preparation. Readiness reuses source
-security, license and npm audit results from CI and verifies the public CLI assets.
+security and license results from CI and verifies the public CLI assets.
 The only project custom execution point is `release`, for the CLI dependency
 check. Exact-source CI proof and candidate evidence are workflow tooling.
 Workflow tooling records candidate evidence and verifies all four

@@ -22,7 +22,7 @@ Please Behave owns the repository's quality gates:
 | `pre-commit` | Repository metadata/documentation contracts, the `format-python` and `format-shell` checks and the imported AGENTS.md size check |
 | `commit-msg` | Imported Conventional Commits Check and advisory header wording Review |
 | `pre-push` | Offline Python tests, the repository contract, imported security, license, workflow and shell checks |
-| `check` | The same quality gates as `pre-push` plus the formatting checks, the AGENTS.md size check, the npm audit and the conditional AGENTS.md review, on the CI checkout |
+| `check` | The same quality gates as `pre-push` plus the formatting checks, the AGENTS.md size check and the conditional AGENTS.md review, on the CI checkout |
 | `release` | Public stable CLI dependency and all four native assets |
 
 Commit and push to run validation through the installed hooks.
@@ -95,8 +95,8 @@ snapshot, not all historical commits or every pushed ref.
 
 Release plans the next version, then runs Readiness and the E2E Candidate in
 parallel. Readiness runs `.github/scripts/check-release-ci.py` to verify both named CI
-matrix entries for the dispatched commit, reusing source security, license and
-npm audit results. The independent `cli-release` Check at `release` verifies the
+matrix entries for the dispatched commit, reusing source security and license
+results. The independent `cli-release` Check at `release` verifies the
 public CLI dependency assets through the published Action.
 It reuses existing push CI rather than rerunning general checks. Plan and
 Publish run no Please Behave or hooks. Candidate evidence is recorded and verified

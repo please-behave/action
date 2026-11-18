@@ -10,8 +10,8 @@ Plan uses a Semantic Release dry run to determine the next version and source SH
 without creating tags, commits or releases. Readiness runs
 `.github/scripts/check-release-ci.py` directly to verify successful push CI for the exact
 commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
-`Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security,
-license and npm audit results are reused from CI without an age limit. The
+`Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security
+and license results are reused from CI without an age limit. The
 published Action then uses the mise-installed governor at `release` with
 `install: 'false'`, `sync: 'true'` and `checks-only: 'true'`.
 
