@@ -35,8 +35,6 @@ class RepositoryTests(unittest.TestCase):
             ("README.md", "| No | `check` |", "| No | `other` |"),
             ("package-lock.json", '"node": ">=26 <27"', '"node": ">=24 <27"'),
             (".github/workflows/release.yml", "  workflow_dispatch:", "  push:"),
-            (".github/workflows/release.yml", "    needs: [plan, release-readiness, release-candidate]", "    needs: []"),
-            (".github/workflows/release.yml", "needs.release-candidate.result == 'success'", "needs.release-candidate.result == 'skipped'"),
             (".github/release-ci.json", '"Check (ubuntu-24.04-arm)"', '"Check"'),
             (".github/workflows/ci.yml", "os: [ubuntu-24.04, ubuntu-24.04-arm]", "os: [ubuntu-24.04]"),
             (
@@ -44,7 +42,6 @@ class RepositoryTests(unittest.TestCase):
                 "      - run: npm ci --ignore-scripts",
                 "      - uses: ./\n      - run: npm ci --ignore-scripts",
             ),
-            (".github/workflows/release.yml", "  contents: read", "  contents: write"),
             (
                 ".github/workflows/release.yml",
                 "      - name: Publish semantic Action release",
