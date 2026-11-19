@@ -48,7 +48,7 @@ export function checkRepository(root) {
   const governed = name => step => new RegExp(`^christianpflugradt/please-behave-governance/actions/release/${name}@[0-9a-f]{40}$`).test(step.uses ?? "");
   const steps = release.jobs.publish.steps;
   const verify = steps.findIndex(step => governed("evidence")(step) && step.with?.operation === "verify");
-  const publish = steps.findIndex(governed("publish"));
+  const publish = steps.findIndex(governed("publish-release"));
   assert.ok(verify >= 0 && verify < publish, "Candidate evidence must be verified before publication");
   assert.equal(steps[publish].with.version, "${{ needs.plan.outputs.version }}");
 
