@@ -39,8 +39,8 @@ class RepositoryTests(unittest.TestCase):
             (".github/workflows/ci.yml", "os: [ubuntu-24.04, ubuntu-24.04-arm]", "os: [ubuntu-24.04]"),
             (
                 ".github/workflows/release.yml",
-                "      - name: Download release candidate evidence",
-                "      - uses: ./\n      - name: Download release candidate evidence",
+                "      - name: Verify complete release candidate evidence",
+                "      - uses: ./\n      - name: Verify complete release candidate evidence",
             ),
             (
                 ".github/workflows/release.yml",
