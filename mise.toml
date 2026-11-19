@@ -24,5 +24,6 @@ description = "Run the deterministic Please Behave checks and stop at the first 
 run = "please run --at pre-push --checks-only --fail-fast"
 
 [tasks.release]
-description = "Start the GitHub Release workflow for remote main"
-run = "gh workflow run release.yml --ref main"
+description = "Start the GitHub Release workflow for remote main once CI on main is idle; --follow watches the run"
+usage = 'flag "--follow" help="Watch the dispatched release run and fail if it fails"'
+run = 'python3 .github/scripts/release.py ${usage_follow:+--follow}'

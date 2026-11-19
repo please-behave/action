@@ -268,9 +268,9 @@ Release jobs install only their required mise tools: Node for planning,
 Python/the governor for readiness and native candidates, Python/Node for publishing.
 The installer acceptance test forwards the resolved governor version from the
 mise Action's outputs; it does not parse configuration in the workflow.
-`mise release` dispatches Release for remote main using an authenticated host `gh`
-CLI, without waiting for completion. It is equivalent to
-`gh workflow run release.yml --ref main`.
+`mise release` waits until no CI run on main is queued or in progress, then dispatches
+Release for remote main using an authenticated host `gh` CLI and returns.
+`mise release --follow` also watches the dispatched run and fails if it fails.
 
 Commit messages are checked only by the managed local Git hook;
 CI does not validate commit history or PR titles. See

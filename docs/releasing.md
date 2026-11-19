@@ -129,8 +129,11 @@ After reviewing CI results and confirming the CLI dependency,
 an authorized maintainer can dispatch:
 
 ```sh
-gh workflow run release.yml --ref main --repo please-behave/action
+mise release
 ```
+
+The task first waits until no CI run on main is queued or in progress, then
+dispatches the workflow with `gh` and returns. Add `--follow` to watch the run.
 
 The workflow reuses successful push-CI proof and runs hosted Action tests after planning;
 it cannot skip validation via dispatch inputs. If CI is not ready, let the
