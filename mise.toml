@@ -1,3 +1,8 @@
+[task_config]
+includes = [
+  "git::https://github.com/christianpflugradt/please-behave-governance.git//mise-tasks/release?ref=2d45945ac920552b37bb569f1d28930e93dddfcd",
+]
+
 [tools]
 "github:please-behave/cli" = "0.16.0"
 node = "26.13.1"
@@ -22,8 +27,3 @@ run = ["ruff format", "git ls-files -z '*.sh' | xargs -0 -r shfmt -w"]
 [tasks.verify]
 description = "Run the deterministic Please Behave checks and stop at the first blocker"
 run = "please run --at pre-push --checks-only --fail-fast"
-
-[tasks.release]
-description = "Start the GitHub Release workflow for remote main once CI on main is idle; --follow watches the run"
-usage = 'flag "--follow" help="Watch the dispatched release run and fail if it fails"'
-run = 'python3 .github/scripts/release.py ${usage_follow:+--follow}'
