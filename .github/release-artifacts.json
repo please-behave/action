@@ -1,7 +1,4 @@
 {
-  "schema_version": 0,
-  "repository": "please-behave/action",
-  "workflow": ".github/workflows/release.yml",
   "root": ".",
   "targets": {
     "ubuntu-24.04": [

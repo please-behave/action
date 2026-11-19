@@ -45,15 +45,17 @@ export function checkRepository(root) {
       assert.doesNotMatch(step.run ?? "", /\bplease\b/, "Plan and Publish must not run Please Behave");
     }
   }
+  const governed = name => step => new RegExp(`^christianpflugradt/please-behave-governance/actions/release/${name}@[0-9a-f]{40}$`).test(step.uses ?? "");
   const steps = release.jobs.publish.steps;
-  const verify = steps.findIndex(step => step.run?.endsWith("release-evidence.py verify"));
-  const publish = steps.findIndex(step => step.run === "npm run release");
+  const verify = steps.findIndex(step => governed("evidence")(step) && step.with?.operation === "verify");
+  const publish = steps.findIndex(governed("publish"));
   assert.ok(verify >= 0 && verify < publish, "Candidate evidence must be verified before publication");
-  assert.equal(steps[publish].env.EXPECTED_RELEASE_VERSION, "${{ needs.plan.outputs.version }}");
+  assert.equal(steps[publish].with.version, "${{ needs.plan.outputs.version }}");
 
-  const policy = JSON.parse(text(".github/release-ci.json"));
-  assert.deepEqual(policy.required_jobs, ci.jobs.check.strategy.matrix.os.map(os => `Check (${os})`),
-    "Release CI policy must name every CI matrix job");
+  const proof = release.jobs["release-readiness"].steps.find(governed("check-ci"));
+  assert.ok(proof, "Release readiness must verify the CI proof");
+  assert.deepEqual(proof.with["required-jobs"].trim().split("\n").map(job => job.trim()), ci.jobs.check.strategy.matrix.os.map(os => `Check (${os})`),
+    "Release CI proof must name every CI matrix job");
 
   for (const workflow of [ci, release]) {
     for (const job of Object.values(workflow.jobs)) {

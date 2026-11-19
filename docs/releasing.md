@@ -7,8 +7,10 @@ uses the dispatched source revision. No release-worthy commits means no readines
 candidate or publication work.
 
 Plan uses a Semantic Release dry run to determine the next version and source SHA
-without creating tags, commits or releases. Readiness runs
-`.github/scripts/check-release-ci.py` directly to verify successful push CI for the exact
+without creating tags, commits or releases. Plan, the CI proof, candidate evidence and publication are the shared
+release actions of the governance repository, pinned to a full commit SHA in the release workflow; the repository
+keeps no Semantic Release configuration or script of its own. Readiness runs
+the `check-ci` action to verify successful push CI for the exact
 commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
 `Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security
 and license results are reused from CI without an age limit. The
@@ -18,7 +20,7 @@ published Action then uses the mise-installed governor at `release` with
 The local CLI dependency check requires the pinned public stable
 CLI release with all four native archives and SHA256SUMS. API failures block publication.
 
-Readiness does not restart or wait for CI. Its policy is `.github/release-ci.json`.
+Readiness does not restart or wait for CI. Its policy is the `required-jobs` input of the `check-ci` step.
 The newest matching CI run must succeed; missing, running, failed or incomplete
 proof blocks. Partial reruns may retain successful jobs from earlier attempts of
 that same run; unrelated runs cannot combine. CI remains independent of Release.
@@ -28,7 +30,7 @@ composite Action on Ubuntu 24.04 x64/ARM64 and macOS ARM64/Intel. All four entri
 must succeed. It produces no native artifacts: the Action publishes its tested source tree. Publish
 requires Plan, Readiness and the entire Candidate matrix to succeed. Semantic
 Release rechecks the planned version, local HEAD, dispatched SHA and remote main
-in its `verifyRelease` hook before tagging. If main or the planned version changes,
+in the shared `verifyRelease` hook before tagging. If main or the planned version changes,
 publication is refused; dispatch again from the latest main. These checks are not
 an atomic lock against concurrent changes.
 
@@ -84,7 +86,7 @@ Acceptance criteria:
   invocations, independent summaries and ordinary governance failures. CLI rule
   selection, configuration validation and exit-code normalization belong to the CLI.
 
-Install development dependencies with `npm ci --ignore-scripts` (Node 26), the
+Install development dependencies with `npm ci --ignore-scripts` (Node 26, only `js-yaml` for the repository contract rule), the
 released governor pinned in `mise.toml`, and the tools listed in
 `mise.toml`. `mise setup` fetches locked npm dependencies, and hook
 setup synchronizes imports explicitly. CI uses mise to install tools, then one
@@ -159,18 +161,19 @@ unavailable.
 ## Common candidate evidence
 
 Each successful hosted candidate restores project governance and runs
-`.github/scripts/release-evidence.py record` to hash the tested Action metadata and all
-runtime scripts, including comparison-base handling. Publish runs the same script
+the shared `evidence` action (`record`) to hash the tested Action metadata and all
+runtime scripts, including comparison-base handling. Publish runs the same action
 with `verify` to require all four current-run/current-attempt manifests and matching
-source hashes. The internal manifests follow `.github/release-artifacts.json`;
+source hashes. The internal manifests follow `.github/release-artifacts.json` (artifact root and targets only);
 no native or public release asset is added.
 
 Plan and Publish never install or invoke Please Behave, synchronize governance,
 or install Git hooks. Evidence verification is release tooling, outside governance.
-Before tagging, the local `.github/scripts/semantic-release-plugin.mjs` checks the
+Before tagging, the shared `publish` action checks the
 recalculated version, checkout, dispatched SHA, repository, main branch and
-current remote main. Offline lifecycle fixtures exercise that local guard
-without requiring a cached external module.
+current remote main; its offline tests live in the governance repository.
+A manual dispatch can set `force` to release a patch version even if no commit
+would raise the version, to test the release process.
 
 ## Published governor updates
 

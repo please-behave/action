@@ -94,13 +94,13 @@ pre-push. Clean CI checkouts provide the release gate. Security scans cover a
 snapshot, not all historical commits or every pushed ref.
 
 Release plans the next version, then runs Readiness and the E2E Candidate in
-parallel. Readiness runs `.github/scripts/check-release-ci.py` to verify both named CI
+parallel. Readiness runs the shared `check-ci` action to verify both named CI
 matrix entries for the dispatched commit, reusing source security and license
 results. The independent `cli-release` Check at `release` verifies the
 public CLI dependency assets through the published Action.
 It reuses existing push CI rather than rerunning general checks. Plan and
 Publish run no Please Behave or hooks. Candidate evidence is recorded and verified
-by `.github/scripts/release-evidence.py`; the local Semantic Release plugin checks source
+by the shared `evidence` action; the shared `publish` action checks source
 and version without installing governance. Publication refuses a changed planned
 version or source revision before tagging. See the release contract for CI reruns
 and readiness prerequisites.
