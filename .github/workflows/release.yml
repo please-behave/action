@@ -63,7 +63,7 @@ jobs:
         with:
           install_args: python github:please-behave/cli
       - name: Verify the candidate at the release point
-        uses: christianpflugradt/please-behave-governance/actions/release/governance@f214b49bd33bf21fbea5c4a9a3214fa83df6fa1d # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/governance@ddb176f80831329b2328b9cf0c976f4e6f634c31 # updates/actions/release
         if: matrix.os == 'ubuntu-24.04'
       - name: Prepare isolated summary acceptance fixture
         run: bash .github/scripts/prepare-action-e2e.sh
@@ -97,7 +97,7 @@ jobs:
           rm -rf .please
           mv "$RUNNER_TEMP/original-please" .please
       - name: Record release candidate evidence
-        uses: christianpflugradt/please-behave-governance/actions/release/evidence@f214b49bd33bf21fbea5c4a9a3214fa83df6fa1d # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/evidence@ddb176f80831329b2328b9cf0c976f4e6f634c31 # updates/actions/release
         with:
           operation: record
           version: ${{ needs.plan.outputs.version }}
@@ -125,12 +125,12 @@ jobs:
         with:
           install_args: python node
       - name: Verify complete release candidate evidence
-        uses: christianpflugradt/please-behave-governance/actions/release/evidence@f214b49bd33bf21fbea5c4a9a3214fa83df6fa1d # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/evidence@ddb176f80831329b2328b9cf0c976f4e6f634c31 # updates/actions/release
         with:
           operation: verify
           version: ${{ needs.plan.outputs.version }}
       - name: Publish semantic Action release
-        uses: christianpflugradt/please-behave-governance/actions/release/publish-release@f214b49bd33bf21fbea5c4a9a3214fa83df6fa1d # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/publish-release@ddb176f80831329b2328b9cf0c976f4e6f634c31 # updates/actions/release
         with:
           version: ${{ needs.plan.outputs.version }}
           force: ${{ inputs.force }}
