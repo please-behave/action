@@ -42,7 +42,7 @@ jobs:
           install_args: node
       - name: Plan next semantic release without publishing
         id: plan
-        uses: christianpflugradt/please-behave-governance/actions/release/plan@b228387979f8dbdc65a0c809a390ccaa3bfbae5c # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/plan@4fa818fe1f56636569b585095415c409673dd296 # updates/actions/release
         with:
           force: ${{ inputs.force }}
 
@@ -66,7 +66,7 @@ jobs:
         with:
           install_args: python github:please-behave/cli
       - name: Verify exact-source CI prerequisites
-        uses: christianpflugradt/please-behave-governance/actions/release/check-ci@b228387979f8dbdc65a0c809a390ccaa3bfbae5c # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/check-ci@4fa818fe1f56636569b585095415c409673dd296 # updates/actions/release
         with:
           required-jobs: |
             Check (ubuntu-24.04)
@@ -142,7 +142,7 @@ jobs:
           rm -rf .please
           mv "$RUNNER_TEMP/original-please" .please
       - name: Record release candidate evidence
-        uses: christianpflugradt/please-behave-governance/actions/release/evidence@b228387979f8dbdc65a0c809a390ccaa3bfbae5c # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/evidence@4fa818fe1f56636569b585095415c409673dd296 # updates/actions/release
         with:
           operation: record
           version: ${{ needs.plan.outputs.version }}
@@ -183,12 +183,12 @@ jobs:
           path: release-evidence
           merge-multiple: true
       - name: Verify complete release candidate evidence
-        uses: christianpflugradt/please-behave-governance/actions/release/evidence@b228387979f8dbdc65a0c809a390ccaa3bfbae5c # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/evidence@4fa818fe1f56636569b585095415c409673dd296 # updates/actions/release
         with:
           operation: verify
           version: ${{ needs.plan.outputs.version }}
       - name: Publish semantic Action release
-        uses: christianpflugradt/please-behave-governance/actions/release/publish@b228387979f8dbdc65a0c809a390ccaa3bfbae5c # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/publish@4fa818fe1f56636569b585095415c409673dd296 # updates/actions/release
         with:
           version: ${{ needs.plan.outputs.version }}
           force: ${{ inputs.force }}
