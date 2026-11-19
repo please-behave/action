@@ -18,7 +18,7 @@ conditions:
     rationale: Each job holds only the permissions it needs.
   - statement: plan and publish neither install the Please Behave action nor run please, and candidate evidence is verified before the release is published with the planned version.
     rationale: Planning and publishing run without governance, and publication must use verified evidence.
-  - statement: The required jobs of the release CI proof step equal the jobs of the CI matrix.
+  - statement: The release readiness job calls the shared readiness workflow, and its required jobs equal the jobs of the CI matrix.
     rationale: Release readiness must wait for every CI job.
   - statement: Checkouts do not persist credentials in the CI and release workflows, and the Please Behave action runs after a checkout.
     rationale: The action evaluates the checked-out repository.

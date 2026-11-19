@@ -22,73 +22,28 @@ jobs:
   plan:
     name: Plan
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
     permissions:
-      contents: write # semantic-release verifies push access even during a dry run
-    outputs:
-      release: ${{ steps.plan.outputs.release }}
-      version: ${{ steps.plan.outputs.version }}
-      source_sha: ${{ steps.plan.outputs.source-sha }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Install project tools
-        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
-        with:
-          install_args: node
-      - name: Plan next semantic release without publishing
-        id: plan
-        uses: christianpflugradt/please-behave-governance/actions/release/plan@4fa818fe1f56636569b585095415c409673dd296 # updates/actions/release
-        with:
-          force: ${{ inputs.force }}
+      contents: write
+    uses: christianpflugradt/please-behave-governance/.github/workflows/release-plan.yml@95293131bd2673933aa8b97348b90486e07e431e # updates/workflows/release
+    with:
+      force: ${{ inputs.force }}
 
   release-readiness:
     name: Release Readiness
     needs: plan
     if: needs.plan.outputs.release == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 90
     permissions:
       contents: read
       actions: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ needs.plan.outputs.source_sha }}
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Install project tools
-        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
-        with:
-          install_args: python github:please-behave/cli
-      - name: Verify exact-source CI prerequisites
-        uses: christianpflugradt/please-behave-governance/actions/release/check-ci@4fa818fe1f56636569b585095415c409673dd296 # updates/actions/release
-        with:
-          required-jobs: |
-            Check (ubuntu-24.04)
-            Check (ubuntu-24.04-arm)
-      - name: Verify release dependency
-        uses: please-behave/action@9a184e405e62a79154989de1e54c54869180751b # v1.5.0
-        with:
-          install: 'false'
-          sync: 'true'
-          execution-point: release
-          summary: 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-      - name: Upload readiness report
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: release-readiness-report-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .please/reports/last.json
-          include-hidden-files: true
-          if-no-files-found: warn
-          retention-days: 7
+    uses: christianpflugradt/please-behave-governance/.github/workflows/release-readiness.yml@95293131bd2673933aa8b97348b90486e07e431e # updates/workflows/release
+    with:
+      source-sha: ${{ needs.plan.outputs.source_sha }}
+      required-jobs: |
+        Check (ubuntu-24.04)
+        Check (ubuntu-24.04-arm)
+      tools: python github:please-behave/cli
+      governance: 'true'
+      timeout-minutes: 90
 
   release-candidate:
     name: Release Candidate (${{ matrix.os }})

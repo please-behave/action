@@ -39,7 +39,7 @@ export function checkRepository(root) {
   assert.deepEqual(release.jobs.plan.permissions, { contents: "write" });
   assert.deepEqual(release.jobs["release-readiness"].permissions, { contents: "read", actions: "read" });
   for (const id of ["plan", "publish"]) {
-    for (const step of release.jobs[id].steps) {
+    for (const step of release.jobs[id].steps ?? []) {
       assert.notEqual(step.uses, "./", "Plan and Publish must not install the governor");
       assert.doesNotMatch(step.uses ?? "", /^please-behave\/action@/);
       assert.doesNotMatch(step.run ?? "", /\bplease\b/, "Plan and Publish must not run Please Behave");
@@ -52,9 +52,9 @@ export function checkRepository(root) {
   assert.ok(verify >= 0 && verify < publish, "Candidate evidence must be verified before publication");
   assert.equal(steps[publish].with.version, "${{ needs.plan.outputs.version }}");
 
-  const proof = release.jobs["release-readiness"].steps.find(governed("check-ci"));
-  assert.ok(proof, "Release readiness must verify the CI proof");
-  assert.deepEqual(proof.with["required-jobs"].trim().split("\n").map(job => job.trim()), ci.jobs.check.strategy.matrix.os.map(os => `Check (${os})`),
+  const readiness = release.jobs["release-readiness"];
+  assert.match(readiness.uses ?? "", /^christianpflugradt\/please-behave-governance\/\.github\/workflows\/release-readiness\.yml@[0-9a-f]{40}$/, "Release readiness must call the shared workflow");
+  assert.deepEqual(readiness.with["required-jobs"].trim().split("\n").map(job => job.trim()), ci.jobs.check.strategy.matrix.os.map(os => `Check (${os})`),
     "Release CI proof must name every CI matrix job");
 
   for (const workflow of [ci, release]) {

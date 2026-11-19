@@ -35,12 +35,12 @@ class RepositoryTests(unittest.TestCase):
             ("README.md", "| No | `check` |", "| No | `other` |"),
             ("package-lock.json", '"node": ">=26 <27"', '"node": ">=24 <27"'),
             (".github/workflows/release.yml", "  workflow_dispatch:", "  push:"),
-            (".github/workflows/release.yml", "            Check (ubuntu-24.04-arm)\n", ""),
+            (".github/workflows/release.yml", "        Check (ubuntu-24.04-arm)\n", ""),
             (".github/workflows/ci.yml", "os: [ubuntu-24.04, ubuntu-24.04-arm]", "os: [ubuntu-24.04]"),
             (
                 ".github/workflows/release.yml",
-                "      - name: Plan next semantic release without publishing",
-                "      - uses: ./\n      - name: Plan next semantic release without publishing",
+                "      - name: Download release candidate evidence",
+                "      - uses: ./\n      - name: Download release candidate evidence",
             ),
             (
                 ".github/workflows/release.yml",
