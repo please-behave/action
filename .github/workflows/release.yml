@@ -39,8 +39,8 @@ jobs:
     with:
       source-sha: ${{ needs.plan.outputs.source_sha }}
       required-jobs: |
-        Check (ubuntu-24.04)
-        Check (ubuntu-24.04-arm)
+        check (ubuntu-24.04) / Check
+        check (ubuntu-24.04-arm) / Check
 
   release-candidate:
     name: Release Candidate (${{ matrix.os }})

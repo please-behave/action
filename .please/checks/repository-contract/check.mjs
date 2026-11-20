@@ -54,7 +54,7 @@ export function checkRepository(root) {
 
   const readiness = release.jobs["release-readiness"];
   assert.match(readiness.uses ?? "", /^christianpflugradt\/please-behave-governance\/\.github\/workflows\/release-readiness\.yml@[0-9a-f]{40}$/, "Release readiness must call the shared workflow");
-  assert.deepEqual(readiness.with["required-jobs"].trim().split("\n").map(job => job.trim()), ci.jobs.check.strategy.matrix.os.map(os => `Check (${os})`),
+  assert.deepEqual(readiness.with["required-jobs"].trim().split("\n").map(job => job.trim()), ci.jobs.check.strategy.matrix.os.map(os => `check (${os}) / Check`),
     "Release CI proof must name every CI matrix job");
 
   for (const workflow of [ci, release]) {

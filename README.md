@@ -252,7 +252,7 @@ own development through `.please/`. `mise install` installs the configured tools
 them separately at `pre-commit` and `check`. Python is exactly pinned in `mise.toml` for
 local and CI scripts. CI invokes one published Action step with
 `install: 'false'` and `sync: 'true'` to run `check` with summaries on both
-supported architectures in its `Check` matrix job. Release reuses successful push
+supported architectures in its `check` matrix job. Release reuses successful push
 CI for the exact source and runs hosted Action tests as its four-platform Candidate
 matrix. Its synthetic fixture lives in `.github/scripts/prepare-action-e2e.sh`.
 Hosted tests run only during release preparation. Readiness reuses source

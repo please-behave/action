@@ -71,9 +71,9 @@ The independent Action E2E workflow runs the actual composite Action through
 `uses: ./` on Linux x64/ARM64 and macOS ARM64/Intel, with repeated invocations,
 independent Job Summaries and an expected failed governance execution.
 The second invocation reuses the installed CLI and synchronizes through the candidate Action.
-CI has one matrix job,
-`check` / `Check (RUNNER)`; Action E2E has one matrix job, `test` / `Test`. Both workflows
-run on pushes to main, pull requests and reusable workflow calls. Neither waits
+CI has one matrix job calling the shared CI workflow,
+`check (RUNNER)` / `Check`; Action E2E has one matrix job, `test` / `Test`. Both workflows
+run on pushes to main and pull requests. Neither waits
 for the other during normal development.
 
 The negative E2E step uses `continue-on-error: true`. The verifier requires its

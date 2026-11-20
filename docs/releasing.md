@@ -12,7 +12,7 @@ release actions of the governance repository, pinned to a full commit SHA in the
 keeps no Semantic Release configuration or script of its own. Readiness runs
 the `check-ci` action to verify successful push CI for the exact
 commit in `please-behave/action`, on `main`, in `.github/workflows/ci.yml`, including
-`Check (ubuntu-24.04)` and `Check (ubuntu-24.04-arm)`. Source security
+`check (ubuntu-24.04) / Check` and `check (ubuntu-24.04-arm) / Check`. Source security
 and license results are reused from CI without an age limit. The
 published Action then uses the mise-installed governor at `release` with
 `install: 'false'`, `sync: 'true'` and `checks-only: 'true'`.
@@ -121,8 +121,8 @@ settings. Repository protection settings are managed separately;
 do not restrict release tags or `refs/notes/*`.
 
 If required status checks are configured, replace references to the old `tests`
-and `summaries` jobs with the CI `Check (ubuntu-24.04)` and
-`Check (ubuntu-24.04-arm)` checks checks. Hosted candidate tests run only during Release, so they are not PR status checks. This refactor does not change remote branch
+and `summaries` jobs with the CI `check (ubuntu-24.04) / Check` and
+`check (ubuntu-24.04-arm) / Check` checks. Hosted candidate tests run only during Release, so they are not PR status checks. This refactor does not change remote branch
 protection settings.
 
 ## Publication procedure
