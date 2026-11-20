@@ -24,7 +24,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
-    uses: christianpflugradt/please-behave-governance/.github/workflows/release-plan.yml@f214b49bd33bf21fbea5c4a9a3214fa83df6fa1d # updates/workflows/release
+    uses: christianpflugradt/please-behave-governance/.github/workflows/release-plan.yml@5d28d96ab824a5b0863a970351941b01fd4769c9 # updates/workflows/release
     with:
       force: ${{ inputs.force }}
 
@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-    uses: christianpflugradt/please-behave-governance/.github/workflows/release-readiness.yml@f214b49bd33bf21fbea5c4a9a3214fa83df6fa1d # updates/workflows/release
+    uses: christianpflugradt/please-behave-governance/.github/workflows/release-readiness.yml@5d28d96ab824a5b0863a970351941b01fd4769c9 # updates/workflows/release
     with:
       source-sha: ${{ needs.plan.outputs.source_sha }}
       required-jobs: |
@@ -63,7 +63,7 @@ jobs:
         with:
           install_args: python github:please-behave/cli
       - name: Verify the candidate at the release point
-        uses: christianpflugradt/please-behave-governance/actions/release/governance@ddb176f80831329b2328b9cf0c976f4e6f634c31 # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/governance@18cc081af6ac3b3d76a55856b6de3fad62b1725a # updates/actions/release
         if: matrix.os == 'ubuntu-24.04'
       - name: Prepare isolated summary acceptance fixture
         run: bash .github/scripts/prepare-action-e2e.sh
@@ -97,7 +97,7 @@ jobs:
           rm -rf .please
           mv "$RUNNER_TEMP/original-please" .please
       - name: Record release candidate evidence
-        uses: christianpflugradt/please-behave-governance/actions/release/evidence@ddb176f80831329b2328b9cf0c976f4e6f634c31 # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/evidence@18cc081af6ac3b3d76a55856b6de3fad62b1725a # updates/actions/release
         with:
           operation: record
           version: ${{ needs.plan.outputs.version }}
@@ -125,12 +125,12 @@ jobs:
         with:
           install_args: python node
       - name: Verify complete release candidate evidence
-        uses: christianpflugradt/please-behave-governance/actions/release/evidence@ddb176f80831329b2328b9cf0c976f4e6f634c31 # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/evidence@18cc081af6ac3b3d76a55856b6de3fad62b1725a # updates/actions/release
         with:
           operation: verify
           version: ${{ needs.plan.outputs.version }}
       - name: Publish semantic Action release
-        uses: christianpflugradt/please-behave-governance/actions/release/publish-release@ddb176f80831329b2328b9cf0c976f4e6f634c31 # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/publish-release@18cc081af6ac3b3d76a55856b6de3fad62b1725a # updates/actions/release
         with:
           version: ${{ needs.plan.outputs.version }}
           force: ${{ inputs.force }}
