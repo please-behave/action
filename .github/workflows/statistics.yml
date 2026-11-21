@@ -19,6 +19,8 @@ jobs:
         uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
           install_args: aqua:boyter/scc python
+          experimental: true
+          version: 2026.11.11
       - name: Install coverage.py
         run: python3 -m pip install --disable-pip-version-check coverage==7.17.3
       - name: Run Action tests with coverage
