@@ -1,4 +1,4 @@
-"""Offline per-invocation report isolation, rendering and exit-code regressions."""
+"""Offline per-invocation report selection, rendering and exit-code regressions."""
 
 import copy
 import importlib.util
@@ -21,14 +21,15 @@ class SummaryTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.slot = self.root / ".please/reports/last.json"
-        self.slot.parent.mkdir(parents=True)
+        self.reports = self.root / ".please/reports"
+        self.reports.mkdir(parents=True)
         self.output = self.root / "summary.md"
         self.fixture = self.root / "fixture.json"
         tool = self.root / "please"
         tool.write_text(
             '#!/bin/sh\nprintf "%s\\n" "$@" >> "$INVOCATIONS"\n'
-            'if [ -f "$FIXTURE" ]; then cp "$FIXTURE" .please/reports/last.json; fi\n'
+            'last=$(ls .please/reports | sed "s/\\.json$//" | sort -n | tail -1)\n'
+            'if [ -f "$FIXTURE" ]; then cp "$FIXTURE" ".please/reports/$((${last:-0} + 1)).json"; fi\n'
             'exit "${RESULT:-0}"\n'
         )
         tool.chmod(0o755)
@@ -196,19 +197,20 @@ class SummaryTests(unittest.TestCase):
         self.assertNotIn("finding 20", text)
         self.assertIn("Findings truncated", text)
 
-    def test_stale_report_is_restored_and_never_rendered(self):
-        self.slot.write_bytes(b"previous report")
+    def test_previous_report_is_never_rendered(self):
+        (self.reports / "7.json").write_bytes(b"previous report")
         for code in (0, 1, 2, 7, 126):
             result = self.run_action(code)
             self.assertEqual(result.returncode, code)
             self.assertIn("::warning::", result.stdout)
             self.assertNotIn("previous report", self.output.read_text())
-            self.assertIn("produced no regular report", self.output.read_text())
-            self.assertEqual(self.slot.read_bytes(), b"previous report")
-            self.assertFalse(list(self.slot.parent.glob(".summary-*")))
+            self.assertIn("saved no report", self.output.read_text())
+            self.assertEqual((self.reports / "7.json").read_bytes(), b"previous report")
+            self.assertEqual([entry.name for entry in self.reports.iterdir()], ["7.json"])
 
-    def test_new_report_replaces_previous_and_repeated_calls_append(self):
-        self.slot.write_text("stale")
+    def test_newest_new_report_is_rendered_and_repeated_calls_append(self):
+        (self.reports / "9.json").write_text("stale")
+        (self.reports / "10.json").write_text("stale")
         self.output.write_text("Other tool\n")
         for point in ("check", "custom"):
             self.report["plan"]["at"] = point
@@ -219,7 +221,8 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual(text.count("## Please Behave"), 2)
         self.assertIn("— check", text)
         self.assertIn("— custom", text)
-        self.assertEqual(json.loads(self.slot.read_text())["plan"]["at"], "custom")
+        self.assertEqual((self.reports / "10.json").read_text(), "stale")
+        self.assertEqual(json.loads((self.reports / "12.json").read_text())["plan"]["at"], "custom")
 
     def test_bad_reports_produce_diagnostics_and_preserve_exit(self):
         variants = [None, [], {**self.report, "schema_version": 999}]
@@ -257,23 +260,23 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("No rules were scheduled", text)
         self.assertIn("Invocation exited unsuccessfully", text)
 
-    def test_disabled_summary_does_not_touch_report_or_summary(self):
-        self.slot.write_text("stale")
+    def test_disabled_summary_does_not_touch_reports_or_summary(self):
+        (self.reports / "1.json").write_text("stale")
         self.assertEqual(self.run_action(7, PLEASE_SUMMARY="false").returncode, 7)
-        self.assertEqual(self.slot.read_text(), "stale")
+        self.assertEqual([entry.name for entry in self.reports.iterdir()], ["1.json"])
         self.assertFalse(self.output.exists())
-        self.assertFalse(list(self.slot.parent.glob(".summary-*")))
 
-    def test_isolation_and_append_failures_do_not_change_exit(self):
-        self.slot.symlink_to(self.fixture)
-        self.fixture.write_text("stale")
-        # No new report, and a symlink must never be used as current evidence.
-        self.fixture.unlink()
+    def test_symlinked_report_directory_and_append_failures_do_not_change_exit(self):
+        elsewhere = self.root / "elsewhere"
+        elsewhere.mkdir()
+        self.reports.rmdir()
+        self.reports.symlink_to(elsewhere)
+        self.save()
         result = self.run_action(1)
         self.assertEqual(result.returncode, 1)
-        self.assertIn("Report isolation failed", self.output.read_text())
-        self.slot.unlink()
-        self.save()
+        self.assertIn("cannot be read", self.output.read_text())
+        self.reports.unlink()
+        self.reports.mkdir()
         for code in (0, 2, 7):
             result = self.run_action(code, GITHUB_STEP_SUMMARY=str(self.root))
             self.assertEqual(result.returncode, code)

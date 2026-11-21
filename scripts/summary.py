@@ -4,14 +4,15 @@ import html
 import json
 import os
 from pathlib import Path
-import shutil
+import re
 import subprocess
-import tempfile
 import time
 
 STATUSES = {"PASS", "FAIL", "ERROR", "NOT_RUN", "CANCELLED"}
 SUMMARY_BYTES = 900 * 1024
 REPORT_BYTES = 32 * 1024 * 1024
+REPORT_NAME = re.compile(r"([1-9][0-9]*)\.json")
+REPORTS = Path(".please/reports")
 
 
 def warning(message):
@@ -157,7 +158,7 @@ def append_summary(lines):
         size = len(line.encode())
         if used + size > available:
             output.append(suffix)
-            warning("output truncated; consult .please/reports/last.json for complete results")
+            warning("output truncated; consult the saved CLI reports in .please/reports for complete results")
             break
         output.append(line)
         used += size
@@ -166,22 +167,24 @@ def append_summary(lines):
         stream.write("".join(output))
 
 
+def saved_numbers(directory):
+    for component in (directory.parent, directory):
+        require(not component.is_symlink(), "report directory is symlinked")
+    if not directory.exists():
+        return set()
+    require(directory.is_dir(), "report directory is not a directory")
+    return {int(match[1]) for entry in directory.iterdir() if (match := REPORT_NAME.fullmatch(entry.name))}
+
+
 def main():
     point = os.environ["PLEASE_EXECUTION_POINT_INPUT"]
-    slot = Path.cwd() / ".please/reports/last.json"
-    backup = None
-    isolated = False
+    directory = Path.cwd() / REPORTS
+    previous = set()
     diagnostic = None
     try:
-        for component in (slot.parent.parent, slot.parent, slot):
-            require(not component.is_symlink(), "cannot isolate a symlinked report path")
-        if slot.exists():
-            require(slot.is_file(), "report slot is not a regular file")
-            backup = Path(tempfile.mkdtemp(prefix=".summary-", dir=slot.parent))
-            slot.rename(backup / "last.json")
-        isolated = True
+        previous = saved_numbers(directory)
     except (OSError, ValueError) as error:
-        diagnostic = f"Report isolation failed: {error}. Current results cannot be identified safely."
+        diagnostic = f"Saved report numbers cannot be read: {error}. Current results cannot be identified safely."
         warning(diagnostic)
     command = ["please", "run", "--at", point]
     if os.environ.get("PLEASE_CHECKS_ONLY", "false") == "true":
@@ -197,28 +200,21 @@ def main():
     elapsed = time.monotonic() - start
     try:
         try:
-            require(isolated, diagnostic)
-            require(not slot.parent.parent.is_symlink() and not slot.parent.is_symlink(), "current report directory is symlinked")
-            require(not slot.is_symlink() and slot.is_file(), "current invocation produced no regular report")
+            require(diagnostic is None, diagnostic)
+            created = saved_numbers(directory) - previous
+            require(created, "current invocation saved no report")
+            slot = directory / f"{max(created)}.json"
+            require(not slot.is_symlink() and slot.is_file(), "current invocation saved no regular report")
             with slot.open("rb") as stream:
                 data = stream.read(REPORT_BYTES + 1)
             require(len(data) <= REPORT_BYTES, "report exceeds summary reader size limit")
             lines = render(json.loads(data), point, code, elapsed)
         except (OSError, ValueError, TypeError, KeyError, RecursionError) as error:
-            warning(f"{error}; inspect CLI logs and .please/reports/last.json")
+            warning(f"{error}; inspect CLI logs and .please/reports")
             lines = [f"\n## Please Behave — {escape(point)}\n\n", f"CLI exit code: **{code}**. Summary unavailable: {escape(error)}.\n"]
         append_summary(lines)
     except Exception as error:
         warning(f"could not append GITHUB_STEP_SUMMARY: {error}; inspect CLI logs/report")
-    finally:
-        if backup is not None:
-            try:
-                previous = backup / "last.json"
-                if previous.exists() and not os.path.lexists(slot):
-                    previous.rename(slot)
-                shutil.rmtree(backup)
-            except OSError as error:
-                warning(f"could not restore/clean previous report at {backup}: {error}")
     return code
 
 

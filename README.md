@@ -175,16 +175,13 @@ instead of a rule table. A nonzero CLI exit is always displayed as unsuccessful,
 even if a saved report says PASS. Summary failures emit warnings without changing
 the CLI exit code or triggering another governance run.
 
-Before execution, an existing regular `.please/reports/last.json` is moved to a
-private temporary directory alongside the report. Only a report produced after
-this isolation is eligible for rendering; timestamps and plan IDs are not used
-as freshness evidence. If execution produces no report, the previous report is
-restored after summary processing. A new report replaces the old one, even when
-malformed. Unsafe paths or isolation failures disable report rendering for that
-invocation and emit a diagnostic. Concurrent CLI invocations sharing a checkout
-are unsupported. Hard cancellation, runner termination and workflow cancellation
-can prevent summary generation and report restoration; leftover `.summary-*`
-directories may contain the preserved report.
+Before execution, the numbers of the saved reports `.please/reports/<number>.json`
+are recorded. Only the newest report with a higher number, saved by this invocation,
+is eligible for rendering; timestamps and plan IDs are not used as freshness
+evidence, and no report is moved or restored. If execution saves no report, a
+diagnostic is emitted instead. Unsafe paths (a symlinked report directory) disable
+report rendering for that invocation and emit a diagnostic. Concurrent CLI
+invocations sharing a checkout are unsupported.
 
 Report input is bounded to 32 MiB. Summary output, including existing content,
 is bounded to 900 KiB, below GitHub's 1 MiB per-step limit. Displayed text fields
@@ -238,7 +235,7 @@ The installer has no persistent cache, installed-version detection or version co
 `install: 'false'` deliberately delegates installation to the caller. There is no
 Windows support or support guarantee for self-hosted runners. The installer
 checks runner OS/architecture metadata; it does not detect the Ubuntu version.
-Offline tests cover installation, execution, report isolation and summary failure
+Offline tests cover installation, execution, report selection and summary failure
 handling with fixtures. Release Candidate exercises the local
 composite Action with two sequential invocations on all four supported hosted runners,
 checking independent
