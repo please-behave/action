@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
-    uses: christianpflugradt/please-behave-governance/.github/workflows/ci-check.yml@4a3679d9da910272ca4d741307e4cbbe2bde6d6e # updates/workflows/ci
+    uses: christianpflugradt/please-behave-governance/.github/workflows/ci-check.yml@65311554dcbadc1dde0e5da59317532f81046201 # updates/workflows/ci
     with:
       runner: ${{ matrix.os }}
     secrets:
