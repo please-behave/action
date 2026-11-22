@@ -1,5 +1,8 @@
 project = "Please Behave Action"
 
+[publish]
+key_env = "PLEASE_GATEWAY_KEY"
+
 [execution_points]
 custom = ["release"]
 
