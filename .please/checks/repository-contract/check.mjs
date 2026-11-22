@@ -47,7 +47,7 @@ export function checkRepository(root) {
       assert.doesNotMatch(step.run ?? "", /\bplease\b/, "Plan and Publish must not run Please Behave");
     }
   }
-  const governed = name => step => new RegExp(`^christianpflugradt/please-behave-governance/actions/release/${name}@[0-9a-f]{40}$`).test(step.uses ?? "");
+  const governed = name => step => new RegExp(`^christianpflugradt/repository-catalog/actions/release/${name}@[0-9a-f]{40}$`).test(step.uses ?? "");
   const steps = release.jobs.publish.steps;
   const verify = steps.findIndex(step => governed("evidence")(step) && step.with?.operation === "verify");
   const publish = steps.findIndex(governed("publish-release"));
@@ -55,7 +55,7 @@ export function checkRepository(root) {
   assert.equal(steps[publish].with.version, "${{ needs.plan.outputs.version }}");
 
   const readiness = release.jobs["release-readiness"];
-  assert.match(readiness.uses ?? "", /^christianpflugradt\/please-behave-governance\/\.github\/workflows\/release-readiness\.yml@[0-9a-f]{40}$/, "Release readiness must call the shared workflow");
+  assert.match(readiness.uses ?? "", /^christianpflugradt\/repository-catalog\/\.github\/workflows\/release-readiness\.yml@[0-9a-f]{40}$/, "Release readiness must call the shared workflow");
   assert.deepEqual(readiness.with["required-jobs"].trim().split("\n").map(job => job.trim()), ci.jobs.check.strategy.matrix.os.map(os => `check (${os}) / Check`),
     "Release CI proof must name every CI matrix job");
 
