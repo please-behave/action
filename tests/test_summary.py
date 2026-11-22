@@ -28,6 +28,13 @@ class SummaryTests(unittest.TestCase):
         tool = self.root / "please"
         tool.write_text(
             '#!/bin/sh\nprintf "%s\\n" "$@" >> "$INVOCATIONS"\n'
+            'if [ "${PLEASE_GATEWAY_URL_INPUT+x}" = x ]; then exit 98; fi\n'
+            'if [ "$1" = publish ]; then\n'
+            '  test "${PLEASE_GATEWAY_KEY:-}" = synthetic-key || exit 99\n'
+            '  printf "Publishing to %s\\n" "$3"\n'
+            '  printf "Publication diagnostic for %s\\n" "$3" >&2\n'
+            '  exit "${PUBLISH_RESULT:-0}"\n'
+            "fi\n"
             'last=$(ls .please/reports | sed "s/\\.json$//" | sort -n | tail -1)\n'
             'if [ -f "$FIXTURE" ]; then cp "$FIXTURE" ".please/reports/$((${last:-0} + 1)).json"; fi\n'
             'exit "${RESULT:-0}"\n'
@@ -40,10 +47,13 @@ class SummaryTests(unittest.TestCase):
             ACTION_DIRECTORY=str(ROOT),
             PLEASE_SUMMARY="true",
             PLEASE_EXECUTION_POINT_INPUT="check",
+            PLEASE_GATEWAY_KEY="synthetic-key",
             GITHUB_STEP_SUMMARY=str(self.output),
             FIXTURE=str(self.fixture),
             INVOCATIONS=str(self.root / "invocations"),
         )
+        self.env.pop("PLEASE_GATEWAY_URL_INPUT", None)
+        self.env.pop("PLEASE_PUBLISH_REQUIRED", None)
         self.report = {
             "schema_version": 1,
             "repository": str(self.root.resolve()),
@@ -138,6 +148,80 @@ class SummaryTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse((self.root / "invocations").exists())
         self.assertFalse(self.output.exists())
+
+    def test_gateway_disabled_leaves_governance_exit_and_output_unchanged(self):
+        self.save()
+        for url_env in ({}, {"PLEASE_GATEWAY_URL_INPUT": ""}):
+            with self.subTest(url_env=url_env):
+                invocation = self.root / "invocations"
+                invocation.unlink(missing_ok=True)
+                self.output.unlink(missing_ok=True)
+                result = self.run_action(2, PLEASE_PUBLISH_REQUIRED="true", **url_env)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertEqual(invocation.read_text().splitlines(), ["run", "--at", "check"])
+                self.assertNotIn("add-mask", result.stdout)
+                self.assertNotIn("Attestation delivery", self.output.read_text())
+
+    def test_publish_runs_after_each_verdict_and_hides_command_output(self):
+        url = "https://gateway.example.org"
+        for verdict, code in (("PASS", 0), ("FAIL", 1), ("ERROR", 2)):
+            with self.subTest(verdict=verdict):
+                self.report["overall"] = verdict
+                self.save()
+                invocation = self.root / "invocations"
+                invocation.unlink(missing_ok=True)
+                self.output.unlink(missing_ok=True)
+                result = self.run_action(code, PLEASE_GATEWAY_URL_INPUT=url)
+                self.assertEqual(result.returncode, code, result.stderr)
+                self.assertEqual(invocation.read_text().splitlines(), ["run", "--at", "check", "publish", "--gateway-url", url])
+                # The runner consumes add-mask as a workflow command, not as log text.
+                self.assertEqual(result.stdout.splitlines(), [f"::add-mask::{url}"])
+                self.assertNotIn(url, result.stderr)
+                text = self.output.read_text()
+                self.assertIn("Attestation delivery: **Accepted.**", text)
+                self.assertIn(f"CLI aggregate outcome: **{verdict}**. CLI exit code: **{code}**.", text)
+                self.assertNotIn(url, text)
+
+    def test_publish_failure_policy_preserves_governance_status_and_masks_url(self):
+        self.save()
+        url = "https://gateway.example.org/%0A\r\n::error::untrusted"
+        for code, required, summarize, expected in (
+            (0, "false", "true", 0),
+            (0, "true", "true", 1),
+            (2, "true", "true", 2),
+            (0, "false", "false", 0),
+        ):
+            with self.subTest(code=code, required=required, summarize=summarize):
+                self.output.unlink(missing_ok=True)
+                result = self.run_action(
+                    code, PLEASE_GATEWAY_URL_INPUT=url, PLEASE_PUBLISH_REQUIRED=required, PLEASE_SUMMARY=summarize, PUBLISH_RESULT="7"
+                )
+                self.assertEqual(result.returncode, expected, result.stderr)
+                mask, warning = result.stdout.splitlines()
+                self.assertEqual(mask, "::add-mask::https://gateway.example.org/%250A%0D%0A::error::untrusted")
+                self.assertIn("::warning::Please Behave attestation delivery failed", warning)
+                text = self.output.read_text()
+                self.assertIn("Attestation delivery: **Failed.**", text)
+                self.assertIn("exit status 7", text)
+                self.assertEqual(f"CLI exit code: **{code}**" in text, summarize == "true")
+                for output in (warning, text, result.stderr):
+                    self.assertNotIn("gateway.example.org", output)
+                    self.assertNotIn("untrusted", output)
+
+    def test_publish_success_with_summary_disabled(self):
+        self.save()
+        result = self.run_action(PLEASE_GATEWAY_URL_INPUT="https://gateway.example.org", PLEASE_SUMMARY="false")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("publish", (self.root / "invocations").read_text().splitlines())
+        self.assertFalse(self.output.exists())
+
+    def test_publish_cannot_send_a_previous_report_if_run_saved_nothing(self):
+        (self.reports / "7.json").write_text(json.dumps(self.report))
+        result = self.run_action(2, PLEASE_GATEWAY_URL_INPUT="https://gateway.example.org")
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertEqual((self.root / "invocations").read_text().splitlines(), ["run", "--at", "check"])
+        self.assertIn("::warning::Please Behave attestation delivery failed", result.stdout)
+        self.assertIn("The current invocation did not save an identifiable report.", self.output.read_text())
 
     def test_success_and_advisory_failure_use_cli_aggregate(self):
         self.report["plan"]["scheduled"] = self.report["plan"]["scheduled"][:2]

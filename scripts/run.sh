@@ -1,4 +1,5 @@
 #!/bin/sh
+set +x
 set -eu
 set -- run --at "$PLEASE_EXECUTION_POINT_INPUT"
 case "${PLEASE_CHECKS_ONLY-false}" in
@@ -18,7 +19,7 @@ if [ "${PLEASE_CHECKS_ONLY-false}" = false ] && [ -z "${PLEASE_CHANGE_BASE:-}" ]
     ;;
   esac
 fi
-if [ "$PLEASE_SUMMARY" = false ]; then
+if [ "$PLEASE_SUMMARY" = false ] && [ -z "${PLEASE_GATEWAY_URL_INPUT:-}" ]; then
   exec please "$@"
 fi
 exec python3 "$ACTION_DIRECTORY/scripts/summary.py"

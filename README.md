@@ -46,7 +46,9 @@ and credentials required by its rules before running the Action.
 | `execution-point` | No | `check` | Point passed as one argument to `please run --at`. |
 | `checks-only` | No | `'false'` | `'true'` adds `--checks-only`, omitting reviews while retaining Job Summaries. Only exact true/false values are accepted. |
 | `run` | No | `'true'` | `'true'` executes after preparation; `'false'` skips execution. Other values fail. |
-| `summary` | No | `'true'` | `'true'` appends a Job Summary for this execution; `'false'` bypasses summary processing. Only these exact values are accepted. |
+| `summary` | No | `'true'` | `'true'` appends a run summary; `'false'` skips it. Delivery failures still appear in the Job Summary. |
+| `gateway-url` | No | None | Gateway origin supplied as a GitHub Actions secret. Enables attestation delivery after the run with CLI `v0.20.0` or later. |
+| `publish-required` | No | `'false'` | `'true'` makes a delivery failure fail an otherwise successful Action step. |
 
 Boolean inputs accept only the exact strings `true` and `false`.
 
@@ -84,6 +86,9 @@ Use `checks-only: 'true'` for deterministic release gates and other points that
 should omit reviews. Each execution still produces its own summary by default.
 Prepare any required services before invoking the Action. For example, headless
 GUI checks can start Xvfb in a preceding step and set `DISPLAY` on the Action step; the Action continues to own CLI execution and summary generation.
+
+To send an attestation for the run, see [Publishing from GitHub Actions](docs/publishing.md)
+for the workflow example and delivery behavior.
 
 ### Tools managed by mise
 
@@ -148,7 +153,8 @@ Execution appends a separate Markdown summary to the current step's
 `GITHUB_STEP_SUMMARY`, including the execution point in the heading. Repeated
 Action invocations keep independent summaries, including within one job. Existing
 summary content is preserved; reports are never aggregated across points.
-Use `summary: 'false'` to bypass all summary processing. Install-only mode
+Use `summary: 'false'` to skip the run summary. Delivery failures still appear
+in the Job Summary when publication is enabled. Install-only mode
 (`run: 'false'`) produces no summary and does not touch reports.
 
 The summary shows the CLI aggregate outcome, exact exit code, measured CLI wall

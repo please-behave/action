@@ -33,6 +33,9 @@ fi
 if [ "${PLEASE_SYNC-false}" != true ] && [ "${PLEASE_SYNC-false}" != false ]; then
   die "sync must be true or false."
 fi
+if [ "${PLEASE_PUBLISH_REQUIRED-false}" != true ] && [ "${PLEASE_PUBLISH_REQUIRED-false}" != false ]; then
+  die "publish-required must be true or false."
+fi
 if [ "${PLEASE_INSTALL-true}" = false ]; then
   if ! command -v please >/dev/null; then
     die "install is false but please is missing from PATH. Install the published CLI first."

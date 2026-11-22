@@ -1,4 +1,4 @@
-"""Run the CLI once and append a bounded, per-invocation GitHub summary."""
+"""Run the CLI once, optionally publish its report, and summarize the results."""
 
 import html
 import json
@@ -15,10 +15,13 @@ REPORT_NAME = re.compile(r"([1-9][0-9]*)\.json")
 REPORTS = Path(".please/reports")
 
 
-def warning(message):
+def command_data(value):
     # Annotation commands must not receive unescaped report/environment content.
-    message = str(message).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-    print(f"::warning::Please Behave summary: {message}", flush=True)
+    return str(value).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
+def warning(message):
+    print(f"::warning::Please Behave summary: {command_data(message)}", flush=True)
 
 
 def escape(value):
@@ -176,8 +179,52 @@ def saved_numbers(directory):
     return {int(match[1]) for entry in directory.iterdir() if (match := REPORT_NAME.fullmatch(entry.name))}
 
 
+def current_report(directory, previous, diagnostic, publishing):
+    require(diagnostic is None, diagnostic)
+    saved = saved_numbers(directory)
+    created = saved - previous
+    require(created, "current invocation saved no report")
+    number = max(created)
+    if publishing:
+        require(number == max(saved), "newest report predates the current invocation")
+    slot = directory / f"{number}.json"
+    require(not slot.is_symlink() and slot.is_file(), "current invocation saved no regular report")
+    return slot
+
+
+def run_summary(slot, diagnostic, point, code, elapsed):
+    try:
+        require(diagnostic is None, diagnostic)
+        with slot.open("rb") as stream:
+            data = stream.read(REPORT_BYTES + 1)
+        require(len(data) <= REPORT_BYTES, "report exceeds summary reader size limit")
+        return render(json.loads(data), point, code, elapsed)
+    except (OSError, ValueError, TypeError, KeyError, RecursionError) as error:
+        warning(f"{error}; inspect CLI logs and .please/reports")
+        return [f"\n## Please Behave — {escape(point)}\n\n", f"CLI exit code: **{code}**. Summary unavailable: {escape(error)}.\n"]
+
+
+def publish(gateway_url, slot):
+    if slot is None:
+        return "The current invocation did not save an identifiable report."
+    try:
+        # CLI or transport diagnostics may contain the secret origin.
+        result = subprocess.run(
+            ["please", "publish", "--gateway-url", gateway_url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
+        )
+    except (OSError, ValueError):
+        return "Unable to start please publish."
+    if result.returncode != 0:
+        return f"please publish exited unsuccessfully (exit status {result.returncode})."
+    return None
+
+
 def main():
     point = os.environ["PLEASE_EXECUTION_POINT_INPUT"]
+    summarize = os.environ.get("PLEASE_SUMMARY", "true") == "true"
+    gateway_url = os.environ.pop("PLEASE_GATEWAY_URL_INPUT", "")
+    if gateway_url:
+        print(f"::add-mask::{command_data(gateway_url)}", flush=True)
     directory = Path.cwd() / REPORTS
     previous = set()
     diagnostic = None
@@ -185,7 +232,8 @@ def main():
         previous = saved_numbers(directory)
     except (OSError, ValueError) as error:
         diagnostic = f"Saved report numbers cannot be read: {error}. Current results cannot be identified safely."
-        warning(diagnostic)
+        if summarize:
+            warning(diagnostic)
     command = ["please", "run", "--at", point]
     if os.environ.get("PLEASE_CHECKS_ONLY", "false") == "true":
         command.append("--checks-only")
@@ -198,23 +246,29 @@ def main():
         print(f"::error::Unable to execute Please Behave: {error}", flush=True)
         code = 127 if isinstance(error, FileNotFoundError) else 126
     elapsed = time.monotonic() - start
+
+    slot = None
     try:
-        try:
-            require(diagnostic is None, diagnostic)
-            created = saved_numbers(directory) - previous
-            require(created, "current invocation saved no report")
-            slot = directory / f"{max(created)}.json"
-            require(not slot.is_symlink() and slot.is_file(), "current invocation saved no regular report")
-            with slot.open("rb") as stream:
-                data = stream.read(REPORT_BYTES + 1)
-            require(len(data) <= REPORT_BYTES, "report exceeds summary reader size limit")
-            lines = render(json.loads(data), point, code, elapsed)
-        except (OSError, ValueError, TypeError, KeyError, RecursionError) as error:
-            warning(f"{error}; inspect CLI logs and .please/reports")
-            lines = [f"\n## Please Behave — {escape(point)}\n\n", f"CLI exit code: **{code}**. Summary unavailable: {escape(error)}.\n"]
-        append_summary(lines)
+        slot = current_report(directory, previous, diagnostic, publishing=bool(gateway_url))
+    except (OSError, ValueError) as error:
+        diagnostic = error
+
+    delivery_error = publish(gateway_url, slot) if gateway_url else None
+    if delivery_error:
+        print(f"::warning::Please Behave attestation delivery failed. {delivery_error}", flush=True)
+
+    try:
+        lines = run_summary(slot, diagnostic, point, code, elapsed) if summarize else []
+        if delivery_error:
+            lines.insert(0, f"\nAttestation delivery: **Failed.** {delivery_error}\n\n")
+        elif gateway_url and summarize:
+            lines.insert(0, "\nAttestation delivery: **Accepted.**\n\n")
+        if lines:
+            append_summary(lines)
     except Exception as error:
         warning(f"could not append GITHUB_STEP_SUMMARY: {error}; inspect CLI logs/report")
+    if code == 0 and delivery_error and os.environ.get("PLEASE_PUBLISH_REQUIRED") == "true":
+        return 1
     return code
 
 

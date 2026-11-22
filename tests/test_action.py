@@ -193,6 +193,9 @@ class ActionTests(unittest.TestCase):
             {"PLEASE_CHECKS_ONLY": "yes"},
             {"PLEASE_CHECKS_ONLY": "True"},
             {"PLEASE_CHECKS_ONLY": ""},
+            {"PLEASE_PUBLISH_REQUIRED": "yes"},
+            {"PLEASE_PUBLISH_REQUIRED": "True"},
+            {"PLEASE_PUBLISH_REQUIRED": ""},
             {"RUNNER_OS": "Windows"},
             {"RUNNER_ARCH": "other"},
         ):
