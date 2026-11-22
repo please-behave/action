@@ -35,6 +35,10 @@ inputs:
     description: Fail an otherwise successful step when attestation delivery fails (true or false)
     required: false
     default: 'false'
+  register:
+    description: Register committed rule versions after a successful run (true or false)
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -48,6 +52,7 @@ runs:
         PLEASE_SUMMARY: ${{ inputs.summary }}
         PLEASE_CHECKS_ONLY: ${{ inputs.checks-only }}
         PLEASE_PUBLISH_REQUIRED: ${{ inputs.publish-required }}
+        PLEASE_REGISTER: ${{ inputs.register }}
         ACTION_DIRECTORY: ${{ github.action_path }}
       run: bash "$ACTION_DIRECTORY/scripts/install.sh"
     - name: Synchronize governance
@@ -63,5 +68,6 @@ runs:
         PLEASE_CHECKS_ONLY: ${{ inputs.checks-only }}
         PLEASE_GATEWAY_URL_INPUT: ${{ inputs.gateway-url }}
         PLEASE_PUBLISH_REQUIRED: ${{ inputs.publish-required }}
+        PLEASE_REGISTER: ${{ inputs.register }}
         ACTION_DIRECTORY: ${{ github.action_path }}
       run: bash "$ACTION_DIRECTORY/scripts/run.sh"

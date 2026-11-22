@@ -36,6 +36,9 @@ fi
 if [ "${PLEASE_PUBLISH_REQUIRED-false}" != true ] && [ "${PLEASE_PUBLISH_REQUIRED-false}" != false ]; then
   die "publish-required must be true or false."
 fi
+if [ "${PLEASE_REGISTER-false}" != true ] && [ "${PLEASE_REGISTER-false}" != false ]; then
+  die "register must be true or false."
+fi
 if [ "${PLEASE_INSTALL-true}" = false ]; then
   if ! command -v please >/dev/null; then
     die "install is false but please is missing from PATH. Install the published CLI first."

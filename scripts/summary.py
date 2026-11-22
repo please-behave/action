@@ -1,4 +1,4 @@
-"""Run the CLI once, optionally publish its report, and summarize the results."""
+"""Run governance, optionally register rule versions and publish the report, and summarize the results."""
 
 import html
 import json
@@ -219,6 +219,31 @@ def publish(gateway_url, slot):
     return None
 
 
+def register(gateway_url):
+    lines = ["\n## Rule version registration\n\n"]
+    if not gateway_url:
+        return lines, "The gateway-url input is required when register is true."
+    try:
+        result = subprocess.run(
+            ["please", "register", "--gateway-url", gateway_url],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+    except (OSError, ValueError):
+        return lines, "Unable to start please register."
+    for outcome in result.stdout.splitlines():
+        # The CLI emits outcomes on stdout and diagnostics on stderr. Only render
+        # outcome lines as inert Markdown, since they contain local rule paths.
+        if outcome.startswith(("created ", "unchanged ", "conflict ")) or outcome == "No rule directories to register.":
+            lines.append(f"- {escape(outcome.replace(gateway_url, '[redacted]'))}\n")
+    lines.append("\n")
+    error = f"please register exited unsuccessfully (exit status {result.returncode})." if result.returncode else None
+    return lines, error
+
+
 def main():
     point = os.environ["PLEASE_EXECUTION_POINT_INPUT"]
     summarize = os.environ.get("PLEASE_SUMMARY", "true") == "true"
@@ -247,6 +272,13 @@ def main():
         code = 127 if isinstance(error, FileNotFoundError) else 126
     elapsed = time.monotonic() - start
 
+    registration_lines, registration_error = [], None
+    if code == 0 and os.environ.get("PLEASE_REGISTER") == "true":
+        registration_lines, registration_error = register(gateway_url)
+        if registration_error:
+            registration_lines.append(f"**Failed.** {registration_error}\n\n")
+            print(f"::error::Please Behave rule registration failed. {registration_error}", flush=True)
+
     slot = None
     try:
         slot = current_report(directory, previous, diagnostic, publishing=bool(gateway_url))
@@ -258,7 +290,9 @@ def main():
         print(f"::warning::Please Behave attestation delivery failed. {delivery_error}", flush=True)
 
     try:
-        lines = run_summary(slot, diagnostic, point, code, elapsed) if summarize else []
+        lines = registration_lines
+        if summarize:
+            lines.extend(run_summary(slot, diagnostic, point, code, elapsed))
         if delivery_error:
             lines.insert(0, f"\nAttestation delivery: **Failed.** {delivery_error}\n\n")
         elif gateway_url and summarize:
@@ -267,7 +301,7 @@ def main():
             append_summary(lines)
     except Exception as error:
         warning(f"could not append GITHUB_STEP_SUMMARY: {error}; inspect CLI logs/report")
-    if code == 0 and delivery_error and os.environ.get("PLEASE_PUBLISH_REQUIRED") == "true":
+    if code == 0 and (registration_error or (delivery_error and os.environ.get("PLEASE_PUBLISH_REQUIRED") == "true")):
         return 1
     return code
 

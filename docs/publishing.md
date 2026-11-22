@@ -51,3 +51,42 @@ Delivery failures produce a warning and a Job Summary entry, even with
 `summary: 'false'`. Set `publish-required: 'true'` to make a delivery failure
 fail a step whose run succeeded. A nonzero governance exit code takes
 precedence, and publishing preserves the saved verdict.
+
+## Registering rule versions
+
+Set `register: 'true'` in a workflow that runs in the repository that owns the
+rules. Use the same gateway origin and key configuration as for publishing.
+Use CLI `v0.21.0` or later and an Action release with the `register` input.
+
+```yaml
+name: Verify and register rules
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: please-behave/action@<action-tag>
+        with:
+          version: <cli-tag>
+          checks-only: 'true'
+          gateway-url: ${{ secrets.PLEASE_GATEWAY_URL }}
+          register: 'true'
+        env:
+          PLEASE_GATEWAY_KEY: ${{ secrets.PLEASE_GATEWAY_KEY }}
+```
+
+Replace the tag placeholders with the releases you adopt, and use your default
+branch in the push trigger. The Action runs registration only after governance
+succeeds. The CLI registers committed local rules, which need a version and a
+`rule.yaml`. The Job Summary lists per-rule outcomes even when
+`summary: 'false'`. A conflict means you need to raise the rule version before
+retrying. Any registration failure fails the step, and attestation delivery
+continues to follow its own policy.

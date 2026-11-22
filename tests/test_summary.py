@@ -29,6 +29,12 @@ class SummaryTests(unittest.TestCase):
         tool.write_text(
             '#!/bin/sh\nprintf "%s\\n" "$@" >> "$INVOCATIONS"\n'
             'if [ "${PLEASE_GATEWAY_URL_INPUT+x}" = x ]; then exit 98; fi\n'
+            'if [ "$1" = register ]; then\n'
+            '  test "${PLEASE_GATEWAY_KEY:-}" = synthetic-key || exit 99\n'
+            '  printf "%s\\n" "${REGISTER_OUTCOMES:-}"\n'
+            '  printf "Registration diagnostic for %s with %s\\n" "$3" "$PLEASE_GATEWAY_KEY" >&2\n'
+            '  exit "${REGISTER_RESULT:-0}"\n'
+            "fi\n"
             'if [ "$1" = publish ]; then\n'
             '  test "${PLEASE_GATEWAY_KEY:-}" = synthetic-key || exit 99\n'
             '  printf "Publishing to %s\\n" "$3"\n'
@@ -54,6 +60,7 @@ class SummaryTests(unittest.TestCase):
         )
         self.env.pop("PLEASE_GATEWAY_URL_INPUT", None)
         self.env.pop("PLEASE_PUBLISH_REQUIRED", None)
+        self.env.pop("PLEASE_REGISTER", None)
         self.report = {
             "schema_version": 1,
             "repository": str(self.root.resolve()),
@@ -222,6 +229,66 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual((self.root / "invocations").read_text().splitlines(), ["run", "--at", "check"])
         self.assertIn("::warning::Please Behave attestation delivery failed", result.stdout)
         self.assertIn("The current invocation did not save an identifiable report.", self.output.read_text())
+
+    def test_opt_in_registers_after_success_and_summarizes_even_when_run_summary_is_disabled(self):
+        self.save()
+        url = "https://gateway.example.org"
+        result = self.run_action(
+            PLEASE_GATEWAY_URL_INPUT=url,
+            PLEASE_REGISTER="true",
+            PLEASE_SUMMARY="false",
+            REGISTER_OUTCOMES="created lint 1.0 (checks/<lint>)\nunchanged docs 2.0 (checks/docs)",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            (self.root / "invocations").read_text().splitlines(),
+            ["run", "--at", "check", "register", "--gateway-url", url, "publish", "--gateway-url", url],
+        )
+        text = self.output.read_text()
+        self.assertIn("## Rule version registration", text)
+        self.assertIn("created lint 1&#46;0 &#40;checks&#47;&#60;lint&#62;&#41;", text)
+        self.assertIn("unchanged docs", text)
+        self.assertNotIn("CLI aggregate outcome", text)
+        self.assertEqual(result.stdout.splitlines(), [f"::add-mask::{url}"])
+        self.assertEqual(result.stderr, "")
+
+    def test_registration_conflict_and_transport_failure_fail_the_step_with_safe_output(self):
+        self.save()
+        url = "https://gateway.example.org"
+        for outcomes in ("conflict (content changed without a new version) lint 1.0 (checks/lint)", ""):
+            with self.subTest(outcomes=outcomes):
+                self.output.unlink(missing_ok=True)
+                result = self.run_action(
+                    PLEASE_GATEWAY_URL_INPUT=url,
+                    PLEASE_REGISTER="true",
+                    REGISTER_OUTCOMES=outcomes,
+                    REGISTER_RESULT="2",
+                )
+                self.assertEqual(result.returncode, 1)
+                mask, error = result.stdout.splitlines()
+                self.assertEqual(mask, f"::add-mask::{url}")
+                self.assertIn("::error::Please Behave rule registration failed", error)
+                text = self.output.read_text()
+                self.assertIn("please register exited unsuccessfully (exit status 2).", text)
+                self.assertEqual("content changed without a new version" in text, bool(outcomes))
+                self.assertIn("Attestation delivery: **Accepted.**", text)
+                for output in (error, text, result.stderr):
+                    self.assertNotIn(url, output)
+                    self.assertNotIn("synthetic-key", output)
+
+    def test_failed_run_skips_registration_and_keeps_publishing(self):
+        self.save()
+        url = "https://gateway.example.org"
+        result = self.run_action(2, PLEASE_GATEWAY_URL_INPUT=url, PLEASE_REGISTER="true")
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual((self.root / "invocations").read_text().splitlines(), ["run", "--at", "check", "publish", "--gateway-url", url])
+        self.assertNotIn("Rule version registration", self.output.read_text())
+
+    def test_registration_requires_gateway_even_with_run_summary_disabled(self):
+        result = self.run_action(PLEASE_REGISTER="true", PLEASE_SUMMARY="false")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual((self.root / "invocations").read_text().splitlines(), ["run", "--at", "check"])
+        self.assertIn("The gateway-url input is required when register is true.", self.output.read_text())
 
     def test_success_and_advisory_failure_use_cli_aggregate(self):
         self.report["plan"]["scheduled"] = self.report["plan"]["scheduled"][:2]

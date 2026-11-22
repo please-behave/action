@@ -196,6 +196,9 @@ class ActionTests(unittest.TestCase):
             {"PLEASE_PUBLISH_REQUIRED": "yes"},
             {"PLEASE_PUBLISH_REQUIRED": "True"},
             {"PLEASE_PUBLISH_REQUIRED": ""},
+            {"PLEASE_REGISTER": "yes"},
+            {"PLEASE_REGISTER": "True"},
+            {"PLEASE_REGISTER": ""},
             {"RUNNER_OS": "Windows"},
             {"RUNNER_ARCH": "other"},
         ):

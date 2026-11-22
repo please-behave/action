@@ -46,9 +46,10 @@ and credentials required by its rules before running the Action.
 | `execution-point` | No | `check` | Point passed as one argument to `please run --at`. |
 | `checks-only` | No | `'false'` | `'true'` adds `--checks-only`, omitting reviews while retaining Job Summaries. Only exact true/false values are accepted. |
 | `run` | No | `'true'` | `'true'` executes after preparation; `'false'` skips execution. Other values fail. |
-| `summary` | No | `'true'` | `'true'` appends a run summary; `'false'` skips it. Delivery failures still appear in the Job Summary. |
+| `summary` | No | `'true'` | `'true'` appends a run summary; `'false'` skips it. Registration outcomes and delivery failures still appear in the Job Summary. |
 | `gateway-url` | No | None | Gateway origin supplied as a GitHub Actions secret. Enables attestation delivery after the run with CLI `v0.20.0` or later. |
 | `publish-required` | No | `'false'` | `'true'` makes a delivery failure fail an otherwise successful Action step. |
+| `register` | No | `'false'` | `'true'` invokes `please register` after a successful run. Requires `gateway-url` and CLI `v0.21.0` or later. Any registration failure fails the step. |
 
 Boolean inputs accept only the exact strings `true` and `false`.
 
@@ -87,8 +88,8 @@ should omit reviews. Each execution still produces its own summary by default.
 Prepare any required services before invoking the Action. For example, headless
 GUI checks can start Xvfb in a preceding step and set `DISPLAY` on the Action step; the Action continues to own CLI execution and summary generation.
 
-To send an attestation for the run, see [Publishing from GitHub Actions](docs/publishing.md)
-for the workflow example and delivery behavior.
+See the workflow examples for [publishing attestations](docs/publishing.md)
+and [registering rule versions](docs/publishing.md#registering-rule-versions).
 
 ### Tools managed by mise
 
@@ -153,8 +154,8 @@ Execution appends a separate Markdown summary to the current step's
 `GITHUB_STEP_SUMMARY`, including the execution point in the heading. Repeated
 Action invocations keep independent summaries, including within one job. Existing
 summary content is preserved; reports are never aggregated across points.
-Use `summary: 'false'` to skip the run summary. Delivery failures still appear
-in the Job Summary when publication is enabled. Install-only mode
+Use `summary: 'false'` to skip the run summary. Registration outcomes and delivery
+failures still appear in the Job Summary. Install-only mode
 (`run: 'false'`) produces no summary and does not touch reports.
 
 The summary shows the CLI aggregate outcome, exact exit code, measured CLI wall
