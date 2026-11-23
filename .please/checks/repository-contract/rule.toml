@@ -1,4 +1,5 @@
 id = "repository-contract"
+version = "1.0"
 name = "Repository contract"
 description = "Action metadata and documentation agree with each other"
 run_at = ["pre-commit", "pre-push", "check"]

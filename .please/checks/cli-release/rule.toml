@@ -1,4 +1,5 @@
 id = "cli-release"
+version = "1.0"
 name = "Pinned CLI release"
 description = "The pinned public CLI release is published and ships all native assets"
 run_at = ["release"]
