@@ -29,14 +29,20 @@ class SummaryTests(unittest.TestCase):
         tool.write_text(
             '#!/bin/sh\nprintf "%s\\n" "$@" >> "$INVOCATIONS"\n'
             'if [ "${PLEASE_GATEWAY_URL_INPUT+x}" = x ]; then exit 98; fi\n'
+            'if [ "$1" = register ] || [ "$1" = publish ]; then\n'
+            '  if [ "${PLEASE_GATEWAY_KEY+x}" = x ]; then\n'
+            '    test "$PLEASE_GATEWAY_KEY" = synthetic-key || exit 99\n'
+            "  else\n"
+            '    test "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" = https://oidc.example.org/token || exit 99\n'
+            '    test "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" = synthetic-request-token || exit 99\n'
+            "  fi\n"
+            "fi\n"
             'if [ "$1" = register ]; then\n'
-            '  test "${PLEASE_GATEWAY_KEY:-}" = synthetic-key || exit 99\n'
             '  printf "%s\\n" "${REGISTER_OUTCOMES:-}"\n'
             '  printf "Registration diagnostic for %s with %s\\n" "$3" "$PLEASE_GATEWAY_KEY" >&2\n'
             '  exit "${REGISTER_RESULT:-0}"\n'
             "fi\n"
             'if [ "$1" = publish ]; then\n'
-            '  test "${PLEASE_GATEWAY_KEY:-}" = synthetic-key || exit 99\n'
             '  printf "Publishing to %s\\n" "$3"\n'
             '  printf "Publication diagnostic for %s\\n" "$3" >&2\n'
             '  exit "${PUBLISH_RESULT:-0}"\n'
@@ -251,6 +257,22 @@ class SummaryTests(unittest.TestCase):
         self.assertNotIn("CLI aggregate outcome", text)
         self.assertEqual(result.stdout.splitlines(), [f"::add-mask::{url}"])
         self.assertEqual(result.stderr, "")
+
+    def test_delivery_inherits_github_oidc_request_environment_without_api_key(self):
+        self.save()
+        self.env.pop("PLEASE_GATEWAY_KEY")
+        result = self.run_action(
+            PLEASE_GATEWAY_URL_INPUT="https://gateway.example.org",
+            PLEASE_REGISTER="true",
+            PLEASE_PUBLISH_REQUIRED="true",
+            ACTIONS_ID_TOKEN_REQUEST_URL="https://oidc.example.org/token",
+            ACTIONS_ID_TOKEN_REQUEST_TOKEN="synthetic-request-token",
+            REGISTER_OUTCOMES="created lint",
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        text = self.output.read_text()
+        self.assertIn("created lint", text)
+        self.assertIn("Attestation delivery: **Accepted.**", text)
 
     def test_registration_conflict_and_transport_failure_fail_the_step_with_safe_output(self):
         self.save()

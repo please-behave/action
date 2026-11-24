@@ -88,8 +88,15 @@ should omit reviews. Each execution still produces its own summary by default.
 Prepare any required services before invoking the Action. For example, headless
 GUI checks can start Xvfb in a preceding step and set `DISPLAY` on the Action step; the Action continues to own CLI execution and summary generation.
 
-See the workflow examples for [publishing attestations](docs/publishing.md)
-and [registering rule versions](docs/publishing.md#registering-rule-versions).
+To publish attestations or register rule versions with GitHub OIDC, use CLI
+`v0.22.0` or later, grant the workflow `id-token: write` alongside
+`contents: read`, and set `publish.auth = "github-oidc"` in
+`.please/config.toml`. The CLI uses the gateway origin as the token audience.
+OIDC requires no API key secret.
+
+See the [publishing workflow](docs/publishing.md), the
+[registration workflow](docs/publishing.md#registering-rule-versions), and
+the [API key setup](docs/publishing.md#using-an-api-key).
 
 ### Tools managed by mise
 
