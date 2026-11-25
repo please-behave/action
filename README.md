@@ -50,6 +50,8 @@ and credentials required by its rules before running the Action.
 | `gateway-url` | No | None | Gateway origin supplied as a GitHub Actions secret. Enables attestation delivery after the run with CLI `v0.20.0` or later. |
 | `publish-required` | No | `'false'` | `'true'` makes a delivery failure fail an otherwise successful Action step. |
 | `register` | No | `'false'` | `'true'` invokes `please register` after a successful run. Requires `gateway-url` and CLI `v0.21.0` or later for rule registration. Rule Set registration requires CLI `v0.23.0` or later. Any registration failure fails the step. |
+| `release-version` | No | None | Records a release with this version after the optional run, also with `run: 'false'`, by invoking `please record release`. Requires CLI `v0.24.0` or later. Without `gateway-url` the step does nothing and says so. A failure fails the step only with `publish-required: 'true'`. |
+| `release-commit` | No | None | Full Git object ID of the released commit, defaulting to `HEAD`. Requires `release-version`. |
 
 Boolean inputs accept only the exact strings `true` and `false`.
 
@@ -95,7 +97,8 @@ To publish attestations or register rule versions with GitHub OIDC, use CLI
 OIDC requires no API key secret.
 
 See the [publishing workflow](docs/publishing.md), the
-[registration workflow](docs/publishing.md#registering-rules-and-rule-sets), and
+[registration workflow](docs/publishing.md#registering-rules-and-rule-sets),
+the [release recording workflow](docs/publishing.md#recording-a-release), and
 the [API key setup](docs/publishing.md#using-an-api-key).
 
 ### Tools managed by mise

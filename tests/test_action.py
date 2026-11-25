@@ -83,7 +83,7 @@ class ActionTests(unittest.TestCase):
         self.assertEqual(self.install().returncode, 0)
         metadata = (ROOT / "action.yml").read_text()
         self.assertIn("if: inputs.run == 'true'", metadata)
-        command = metadata.split("      run: ")[-1].strip()
+        command = metadata.split("- name: Record release")[0].split("      run: ")[-1].strip()
         for point, status in (
             ("check", 0),
             ("custom", 0),

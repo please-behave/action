@@ -41,6 +41,14 @@ inputs:
       Rule Set registration requires CLI v0.23.0 or later and a version for each set.
     required: false
     default: 'false'
+  release-version:
+    description: >-
+      Record a release with this version after the optional run, independent of run.
+      Requires gateway-url and CLI v0.24.0 or later.
+    required: false
+  release-commit:
+    description: Full Git object ID of the released commit, defaulting to HEAD; requires release-version
+    required: false
 runs:
   using: composite
   steps:
@@ -73,3 +81,13 @@ runs:
         PLEASE_REGISTER: ${{ inputs.register }}
         ACTION_DIRECTORY: ${{ github.action_path }}
       run: bash "$ACTION_DIRECTORY/scripts/run.sh"
+    - name: Record release
+      if: inputs.release-version != '' || inputs.release-commit != ''
+      shell: bash
+      env:
+        PLEASE_RELEASE_VERSION: ${{ inputs.release-version }}
+        PLEASE_RELEASE_COMMIT: ${{ inputs.release-commit }}
+        PLEASE_GATEWAY_URL_INPUT: ${{ inputs.gateway-url }}
+        PLEASE_PUBLISH_REQUIRED: ${{ inputs.publish-required }}
+        ACTION_DIRECTORY: ${{ github.action_path }}
+      run: python3 "$ACTION_DIRECTORY/scripts/record-release.py"

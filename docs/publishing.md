@@ -103,6 +103,32 @@ when `summary: 'false'`. If you changed a rule or Rule Set and get a conflict,
 raise the version of the conflicting definition before retrying. Any registration
 failure fails the step, and attestation delivery follows its own policy.
 
+## Recording a release
+
+Set `release-version` to report a release to the gateway, for example from a
+release workflow. Use the same gateway origin and authentication as for
+publishing and an Action release with the `release-version` input. The input
+requires CLI `v0.24.0` or later. The step runs `please record release` without
+a governance run, so `run: 'false'` is enough. The version is an opaque string
+and need not be a Git tag. The commit defaults to `HEAD`; set `release-commit`
+to a full Git object ID to record another commit.
+
+```yaml
+      - uses: please-behave/action@<action-tag>
+        with:
+          version: v0.24.0
+          run: 'false'
+          gateway-url: ${{ secrets.PLEASE_GATEWAY_URL }}
+          release-version: ${{ github.ref_name }}
+```
+
+Without a gateway URL the step does nothing and says so in a notice and the Job
+Summary. The Job Summary shows whether the release was recorded, was already
+known (unchanged) or conflicts with a commit recorded for the same version,
+even with `summary: 'false'`. Any other failure, including a conflict, produces
+a warning and a Job Summary entry. Set `publish-required: 'true'` to make it
+fail the step.
+
 ## Using an API key
 
 API key authentication is the CLI default. Use CLI `v0.20.0` or later for

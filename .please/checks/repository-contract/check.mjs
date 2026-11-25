@@ -14,7 +14,7 @@ export function checkRepository(root) {
   const readme = text("README.md");
   assert.equal(metadata.runs.using, "composite", "Action must remain composite");
   assert.deepEqual(Object.keys(metadata.inputs).sort(), [
-    "checks-only", "execution-point", "gateway-url", "install", "publish-required", "register", "run", "summary", "sync", "version",
+    "checks-only", "execution-point", "gateway-url", "install", "publish-required", "register", "release-commit", "release-version", "run", "summary", "sync", "version",
   ]);
   assert.equal(metadata.outputs, undefined, "Documented Action has no outputs");
   for (const [name, input] of Object.entries(metadata.inputs)) {
