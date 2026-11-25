@@ -96,7 +96,7 @@ exact-source CI directly, then invokes the published Action at `release` with
 `checks-only` and summaries enabled. Plan and Publish prepare only Node dependencies and never install
 Please Behave or Git hooks. Plan needs `contents: write` because Semantic Release
 verifies push access even during a dry run; Publish needs it to create release tags
-and the GitHub Release. Readiness needs `contents: read` and `actions: read`;
+and the GitHub Release, and `id-token: write` to record the release at the gateway. Readiness needs `contents: read` and `actions: read`;
 Candidate needs only `contents: read`.
 
 The managed `commit-msg` hook runs the imported syntax Check and advisory

@@ -37,7 +37,7 @@ export function checkRepository(root) {
   const ci = yaml(".github/workflows/ci.yml");
   const release = yaml(".github/workflows/release.yml");
   assert.deepEqual(Object.keys(release.on), ["workflow_dispatch"], "Releases must remain manual");
-  assert.deepEqual(release.jobs.publish.permissions, { contents: "write" });
+  assert.deepEqual(release.jobs.publish.permissions, { contents: "write", "id-token": "write" });
   assert.deepEqual(release.jobs.plan.permissions, { contents: "write" });
   assert.deepEqual(release.jobs["release-readiness"].permissions, { contents: "read", actions: "read" });
   for (const id of ["plan", "publish"]) {
