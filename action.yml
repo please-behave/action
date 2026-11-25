@@ -36,7 +36,9 @@ inputs:
     required: false
     default: 'false'
   register:
-    description: Register committed rule versions after a successful run (true or false)
+    description: >-
+      Register committed rule versions and Rule Sets after a successful run (true or false).
+      Rule Set registration requires CLI v0.23.0 or later and a version for each set.
     required: false
     default: 'false'
 runs:

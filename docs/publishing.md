@@ -59,14 +59,16 @@ Delivery failures produce a warning and a Job Summary entry, even with
 fail a step whose run succeeded. A nonzero governance exit code takes
 precedence, and publishing preserves the saved verdict.
 
-## Registering rule versions
+## Registering rules and Rule Sets
 
 Set `register: 'true'` in a workflow that runs in the repository that owns the
-rules. Use the same gateway origin and OIDC configuration as for publishing,
-CLI `v0.22.0` or later, and an Action release with the `register` input.
+rules and Rule Sets. Use the same gateway origin and OIDC configuration as for
+publishing and an Action release with the `register` input. Rule Set
+registration requires CLI `v0.23.0` or later. With GitHub OIDC, CLI
+`v0.22.0` and `v0.22.1` register rule versions only.
 
 ```yaml
-name: Verify and register rules
+name: Verify and register rules and Rule Sets
 on:
   push:
     branches: [main]
@@ -83,26 +85,31 @@ jobs:
           persist-credentials: false
       - uses: please-behave/action@<action-tag>
         with:
-          version: v0.22.0
+          version: v0.23.0
           checks-only: 'true'
           gateway-url: ${{ secrets.PLEASE_GATEWAY_URL }}
           register: 'true'
 ```
 
 Replace `<action-tag>` with a release that includes the registration input,
-and use your default branch in the push trigger. The Action runs registration
-only after governance succeeds. The CLI registers committed local rules, which
-need a version and a `rule.yaml`. The Job Summary lists per-rule outcomes even when
-`summary: 'false'`. A conflict means you need to raise the rule version before
-retrying. Any registration failure fails the step, and attestation delivery
-continues to follow its own policy.
+and use your default branch in the push trigger. After governance succeeds, the
+Action runs `please register` once. The CLI registers committed local rules
+first, then the Rule Sets defined in the same repository. Each rule needs a
+version and a `rule.yaml`. Each Rule Set needs a version and a `ruleset.yaml`
+alongside its definition.
+
+The Job Summary lists created, unchanged, and conflicting registrations even
+when `summary: 'false'`. If you changed a rule or Rule Set and get a conflict,
+raise the version of the conflicting definition before retrying. Any registration
+failure fails the step, and attestation delivery follows its own policy.
 
 ## Using an API key
 
 API key authentication is the CLI default. Use CLI `v0.20.0` or later for
-publishing and `v0.21.0` or later for registration. Configure the name of the
-environment variable that holds the key in `.please/config.toml`. If you
-previously configured OIDC, remove `auth = "github-oidc"` from `[publish]`.
+publishing, `v0.21.0` or later for rule registration, and `v0.23.0` or later
+for Rule Set registration. Configure the name of the environment variable that
+holds the key in `.please/config.toml`. If you previously configured OIDC,
+remove `auth = "github-oidc"` from `[publish]`.
 
 ```toml
 [publish]

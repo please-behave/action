@@ -49,7 +49,7 @@ and credentials required by its rules before running the Action.
 | `summary` | No | `'true'` | `'true'` appends a run summary; `'false'` skips it. Registration outcomes and delivery failures still appear in the Job Summary. |
 | `gateway-url` | No | None | Gateway origin supplied as a GitHub Actions secret. Enables attestation delivery after the run with CLI `v0.20.0` or later. |
 | `publish-required` | No | `'false'` | `'true'` makes a delivery failure fail an otherwise successful Action step. |
-| `register` | No | `'false'` | `'true'` invokes `please register` after a successful run. Requires `gateway-url` and CLI `v0.21.0` or later. Any registration failure fails the step. |
+| `register` | No | `'false'` | `'true'` invokes `please register` after a successful run. Requires `gateway-url` and CLI `v0.21.0` or later for rule registration. Rule Set registration requires CLI `v0.23.0` or later. Any registration failure fails the step. |
 
 Boolean inputs accept only the exact strings `true` and `false`.
 
@@ -95,7 +95,7 @@ To publish attestations or register rule versions with GitHub OIDC, use CLI
 OIDC requires no API key secret.
 
 See the [publishing workflow](docs/publishing.md), the
-[registration workflow](docs/publishing.md#registering-rule-versions), and
+[registration workflow](docs/publishing.md#registering-rules-and-rule-sets), and
 the [API key setup](docs/publishing.md#using-an-api-key).
 
 ### Tools managed by mise
