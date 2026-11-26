@@ -103,6 +103,10 @@ when `summary: 'false'`. If you changed a rule or Rule Set and get a conflict,
 raise the version of the conflicting definition before retrying. Any registration
 failure fails the step, and attestation delivery follows its own policy.
 
+With CLI `v0.25.0` or later, `register: 'true'` also registers the deployment
+targets configured in the repository, after the Rule Sets. Register targets
+before recording deployments to them.
+
 ## Recording a release
 
 Set `release-version` to report a release to the gateway, for example from a
@@ -128,6 +132,36 @@ known (unchanged) or conflicts with a commit recorded for the same version,
 even with `summary: 'false'`. Any other failure, including a conflict, produces
 a warning and a Job Summary entry. Set `publish-required: 'true'` to make it
 fail the step.
+
+## Recording a deployment
+
+Set `deployment-target` to report that software was deployed, for example from
+a deployment workflow. Use the same gateway origin and authentication as for
+publishing and an Action release with the deployment inputs. The inputs require
+CLI `v0.25.0` or later. The step runs `please record deployment` without a
+governance run, so `run: 'false'` is enough. The target must be registered for
+the authenticated sender. `deployment-repository` identifies the deployed
+software, not the workflow repository, and has no default. Set exactly one of
+`deployment-version` and `deployment-commit`; the commit must be a full Git
+object ID. The Action derives neither the target nor the version.
+
+```yaml
+      - uses: please-behave/action@<action-tag>
+        with:
+          version: v0.25.0
+          run: 'false'
+          gateway-url: ${{ secrets.PLEASE_GATEWAY_URL }}
+          deployment-target: production
+          deployment-repository: github.com/example/app
+          deployment-version: ${{ github.ref_name }}
+```
+
+Without a gateway URL the step does nothing and says so in a notice and the Job
+Summary. The Job Summary shows whether the deployment was recorded, was
+unchanged or went to an unknown target, even with `summary: 'false'`. Any other
+failure, including an unknown target, produces a warning and a Job Summary
+entry. Set `publish-required: 'true'` to make it fail the step. Missing or
+ambiguous inputs fail the step.
 
 ## Using an API key
 

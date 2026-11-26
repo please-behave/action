@@ -49,6 +49,21 @@ inputs:
   release-commit:
     description: Full Git object ID of the released commit, defaulting to HEAD; requires release-version
     required: false
+  deployment-target:
+    description: >-
+      Record a deployment to this registered target after the optional run, independent of run.
+      Requires gateway-url, deployment-repository, one of deployment-version and deployment-commit,
+      and CLI v0.25.0 or later.
+    required: false
+  deployment-repository:
+    description: Normalized identity or network Git URL of the deployed repository; requires deployment-target
+    required: false
+  deployment-version:
+    description: Deployed version; exactly one of deployment-version and deployment-commit is required
+    required: false
+  deployment-commit:
+    description: Full Git object ID of the deployed commit; exactly one of deployment-version and deployment-commit is required
+    required: false
 runs:
   using: composite
   steps:
@@ -91,3 +106,15 @@ runs:
         PLEASE_PUBLISH_REQUIRED: ${{ inputs.publish-required }}
         ACTION_DIRECTORY: ${{ github.action_path }}
       run: python3 "$ACTION_DIRECTORY/scripts/record-release.py"
+    - name: Record deployment
+      if: inputs.deployment-target != '' || inputs.deployment-repository != '' || inputs.deployment-version != '' || inputs.deployment-commit != ''
+      shell: bash
+      env:
+        PLEASE_DEPLOYMENT_TARGET: ${{ inputs.deployment-target }}
+        PLEASE_DEPLOYMENT_REPOSITORY: ${{ inputs.deployment-repository }}
+        PLEASE_DEPLOYMENT_VERSION: ${{ inputs.deployment-version }}
+        PLEASE_DEPLOYMENT_COMMIT: ${{ inputs.deployment-commit }}
+        PLEASE_GATEWAY_URL_INPUT: ${{ inputs.gateway-url }}
+        PLEASE_PUBLISH_REQUIRED: ${{ inputs.publish-required }}
+        ACTION_DIRECTORY: ${{ github.action_path }}
+      run: python3 "$ACTION_DIRECTORY/scripts/record-deployment.py"

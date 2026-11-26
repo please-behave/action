@@ -49,9 +49,13 @@ and credentials required by its rules before running the Action.
 | `summary` | No | `'true'` | `'true'` appends a run summary; `'false'` skips it. Registration outcomes and delivery failures still appear in the Job Summary. |
 | `gateway-url` | No | None | Gateway origin supplied as a GitHub Actions secret. Enables attestation delivery after the run with CLI `v0.20.0` or later. |
 | `publish-required` | No | `'false'` | `'true'` makes a delivery failure fail an otherwise successful Action step. |
-| `register` | No | `'false'` | `'true'` invokes `please register` after a successful run. Requires `gateway-url` and CLI `v0.21.0` or later for rule registration. Rule Set registration requires CLI `v0.23.0` or later. Any registration failure fails the step. |
+| `register` | No | `'false'` | `'true'` invokes `please register` after a successful run. Requires `gateway-url` and CLI `v0.21.0` or later for rule registration. Rule Set registration requires CLI `v0.23.0` or later. Any registration failure fails the step. With CLI `v0.25.0` or later it also registers the configured deployment targets. |
 | `release-version` | No | None | Records a release with this version after the optional run, also with `run: 'false'`, by invoking `please record release`. Requires CLI `v0.24.0` or later. Without `gateway-url` the step does nothing and says so. A failure fails the step only with `publish-required: 'true'`. |
 | `release-commit` | No | None | Full Git object ID of the released commit, defaulting to `HEAD`. Requires `release-version`. |
+| `deployment-target` | No | None | Records a deployment to this registered target after the optional run, also with `run: 'false'`, by invoking `please record deployment`. Requires `deployment-repository`, exactly one of `deployment-version` and `deployment-commit`, and CLI `v0.25.0` or later. Without `gateway-url` the step does nothing and says so. A failure fails the step only with `publish-required: 'true'`. |
+| `deployment-repository` | No | None | Normalized identity or network Git URL of the deployed repository. It has no default. |
+| `deployment-version` | No | None | Deployed version. Exactly one of this and `deployment-commit` is required. |
+| `deployment-commit` | No | None | Full Git object ID of the deployed commit. Exactly one of this and `deployment-version` is required. |
 
 Boolean inputs accept only the exact strings `true` and `false`.
 
@@ -98,7 +102,8 @@ OIDC requires no API key secret.
 
 See the [publishing workflow](docs/publishing.md), the
 [registration workflow](docs/publishing.md#registering-rules-and-rule-sets),
-the [release recording workflow](docs/publishing.md#recording-a-release), and
+the [release recording workflow](docs/publishing.md#recording-a-release),
+the [deployment recording workflow](docs/publishing.md#recording-a-deployment), and
 the [API key setup](docs/publishing.md#using-an-api-key).
 
 ### Tools managed by mise
