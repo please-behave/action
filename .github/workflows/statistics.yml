@@ -20,7 +20,7 @@ jobs:
         with:
           install_args: aqua:boyter/scc python
           experimental: true
-          version: 2026.11.11
+          version: 2026.11.12
       - name: Install coverage.py
         run: python3 -m pip install --disable-pip-version-check coverage==7.17.3
       - name: Run Action tests with coverage
